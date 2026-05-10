@@ -164,27 +164,37 @@ def _summarize(failures: list[tuple[str, str]], duration: float) -> None:
 
 # ---------------- Stock probes for the four shared servers ------------------
 
+def _probe_check(result: dict, server: str) -> bool:
+    """Surface the underlying error message in stdout when a probe fails so
+    the caller can act, instead of silently returning False."""
+    if result.get("ok"):
+        return True
+    print(f"[probe:{server}] error: {result.get('error', '<no error string>')}")
+    return False
+
+
 async def probe_snowflake() -> bool:
     from .snowflake import client as sf
-    result = sf.query("SELECT 1 AS ok", max_rows=1)
-    return bool(result.get("ok"))
+    return _probe_check(sf.query("SELECT 1 AS ok", max_rows=1), "snowflake")
 
 
 async def probe_slack() -> bool:
     from .slack import client as sl
-    return bool(sl.my_user_id())
+    try:
+        return bool(sl.my_user_id())
+    except Exception as exc:
+        print(f"[probe:slack] error: {type(exc).__name__}: {exc}")
+        return False
 
 
 async def probe_notion() -> bool:
     from .notion import client as nt
-    result = nt.search("a", page_size=1)
-    return bool(result.get("ok"))
+    return _probe_check(nt.search("a", page_size=1), "notion")
 
 
 async def probe_drive() -> bool:
     from .drive import client as dr
-    result = dr.list_recent_files(limit=1)
-    return bool(result.get("ok"))
+    return _probe_check(dr.list_recent_files(limit=1), "drive")
 
 
 STANDARD_PROBES = {

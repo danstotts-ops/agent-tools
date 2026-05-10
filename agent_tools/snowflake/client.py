@@ -27,12 +27,33 @@ _CONN: snowflake.connector.SnowflakeConnection | None = None
 
 
 def _load_private_key() -> bytes:
-    """Load PEM private key from env, return DER bytes for snowflake-connector-python."""
-    pem = os.environ.get("SNOWFLAKE_PRIVATE_KEY")
-    if not pem:
-        raise RuntimeError("SNOWFLAKE_PRIVATE_KEY not set")
-    # Allow keys with literal newlines OR `\n` escapes
-    pem_bytes = pem.replace("\\n", "\n").encode("utf-8")
+    """Load PEM private key, return DER bytes for snowflake-connector-python.
+
+    Two sources, in order:
+      1. SNOWFLAKE_PRIVATE_KEY_PATH : filesystem path to a PEM file (preferred
+         for local dev; avoids the multi-line-env-var pain).
+      2. SNOWFLAKE_PRIVATE_KEY : PEM string in env (used in Railway / prod).
+         Allows literal newlines OR `\\n` escapes.
+    """
+    from pathlib import Path
+
+    pem_bytes: bytes | None = None
+
+    key_path = os.environ.get("SNOWFLAKE_PRIVATE_KEY_PATH")
+    if key_path:
+        path = Path(key_path).expanduser()
+        if not path.is_file():
+            raise RuntimeError(f"SNOWFLAKE_PRIVATE_KEY_PATH set but file not found: {path}")
+        pem_bytes = path.read_bytes()
+    else:
+        pem = os.environ.get("SNOWFLAKE_PRIVATE_KEY")
+        if not pem:
+            raise RuntimeError(
+                "Neither SNOWFLAKE_PRIVATE_KEY_PATH nor SNOWFLAKE_PRIVATE_KEY is set"
+            )
+        # Allow keys with literal newlines OR `\n` escapes
+        pem_bytes = pem.replace("\\n", "\n").encode("utf-8")
+
     passphrase = os.environ.get("SNOWFLAKE_PRIVATE_KEY_PASSPHRASE")
     pk = serialization.load_pem_private_key(
         pem_bytes,

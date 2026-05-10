@@ -24,9 +24,13 @@ from pathlib import Path
 from typing import Any, Awaitable, Callable
 
 from claude_agent_sdk import (
+    AssistantMessage,
     ClaudeAgentOptions,
     ClaudeSDKClient,
     HookMatcher,
+    ResultMessage,
+    TextBlock,
+    ToolUseBlock,
 )
 
 from .slack.client import post_in_thread
@@ -58,11 +62,16 @@ def _make_post_tool_use_hook(channel_id: str, thread_ts: str):
                 if isinstance(parsed, dict) and parsed.get("ok") is False:
                     tool_name = input_data.get("tool_name", "?")
                     err = parsed.get("error", "unknown")
-                    post_in_thread(
-                        channel_id,
-                        thread_ts,
-                        f":warning: tool `{tool_name}` returned error: `{str(err)[:300]}`",
-                    )
+                    if channel_id.startswith("C_SMOKE"):
+                        print(f"[runtime] tool `{tool_name}` errored "
+                              f"(smoke channel, no Slack post): {str(err)[:300]}",
+                              flush=True)
+                    else:
+                        post_in_thread(
+                            channel_id,
+                            thread_ts,
+                            f":warning: tool `{tool_name}` returned error: `{str(err)[:300]}`",
+                        )
         except Exception:
             traceback.print_exc()
         return {}
@@ -98,7 +107,7 @@ async def run_ask_async(
     thread_context: list[dict] | None = None,
     model: str = DEFAULT_MODEL,
     max_turns: int = DEFAULT_MAX_TURNS,
-    permission_mode: str = "acceptEdits",
+    permission_mode: str = "bypassPermissions",
     extra_setting_sources: list[str] | None = None,
     extra_dirs: list[str] | None = None,
     disallowed_tools: list[str] | None = None,
@@ -121,9 +130,11 @@ async def run_ask_async(
     thread_context
         Prior messages in the thread, oldest first. Optional.
     permission_mode
-        SDK permission mode. Default "acceptEdits" auto-approves read-only +
-        append tools but prompts for destructive writes. Use "default" for
-        agents that need stricter gates (e.g. social-agent's publish path).
+        SDK permission mode. Default "bypassPermissions" auto-approves all
+        tool calls -- the right behavior for an autonomous Slack agent
+        where there is no human in the loop to approve each call. Use
+        "acceptEdits" or "default" for agents that need stricter gates
+        (e.g. social-agent's publish path).
     extra_setting_sources
         Additional Claude Code setting sources beyond the user-level default.
     extra_dirs
@@ -167,16 +178,32 @@ async def run_ask_async(
     error_msg: str | None = None
     t0 = time.time()
 
+    # Track the most recent assistant text in case ResultMessage.result
+    # is None (which happens with some SDK paths). The final assistant
+    # turn's text is then used as final_text.
+    last_assistant_text = ""
+
     try:
         async with ClaudeSDKClient(options=options) as agent:
             await agent.query(user_msg)
             async for msg in agent.receive_response():
-                msg_type = getattr(msg, "type", None)
-                if msg_type == "tool_use":
-                    tool_calls.append(getattr(msg, "name", "?"))
-                if msg_type == "result":
-                    final_text = (getattr(msg, "result", "") or "").strip()
-                    usage = getattr(msg, "usage", {}) or {}
+                if isinstance(msg, AssistantMessage):
+                    chunks = []
+                    for block in msg.content:
+                        if isinstance(block, ToolUseBlock):
+                            tool_calls.append(block.name)
+                        elif isinstance(block, TextBlock):
+                            chunks.append(block.text)
+                    if chunks:
+                        last_assistant_text = "\n".join(chunks).strip()
+                elif isinstance(msg, ResultMessage):
+                    final_text = (msg.result or last_assistant_text or "").strip()
+                    usage = msg.usage or {}
+                    if msg.is_error and msg.errors:
+                        error_msg = "; ".join(str(e) for e in msg.errors)[:300]
+            # Fall back if the loop ended without a ResultMessage producing text.
+            if not final_text:
+                final_text = last_assistant_text
     except Exception as exc:
         traceback.print_exc()
         error_msg = f"{type(exc).__name__}: {str(exc)[:300]}"
@@ -188,7 +215,14 @@ async def run_ask_async(
             else "(no reply produced; check Railway logs)"
         )
 
-    posted = post_in_thread(channel_id, thread_ts, final_text)
+    # Skip the Slack post for smoke channels. Lets `agent_tools.smoke`
+    # exercise the agent loop end-to-end without spamming a real channel.
+    if channel_id.startswith("C_SMOKE"):
+        posted = {"ts": "smoke-no-post"}
+        print(f"[runtime] smoke channel; skipping Slack post. final_text="
+              f"{final_text[:200]!r}", flush=True)
+    else:
+        posted = post_in_thread(channel_id, thread_ts, final_text)
     duration = time.time() - t0
 
     if on_complete is not None:
