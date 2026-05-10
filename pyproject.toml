@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-tools"
+version = "0.1.0"
+description = "Shared MCP servers and runtime for Dan's Slack-driven agents (fpa, cos, strategy, revops, etc.)"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Dan Stotts" }]
+license = { text = "Proprietary" }
+
+dependencies = [
+  "claude-agent-sdk>=0.1.0",
+  "slack-sdk>=3.27",
+  "snowflake-connector-python>=3.10",
+  "cryptography>=41.0",
+  "notion-client>=2.2,<3.0",
+  "python-dotenv>=1.0",
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.4",
+  "pytest-asyncio>=0.23",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["agent_tools*"]
