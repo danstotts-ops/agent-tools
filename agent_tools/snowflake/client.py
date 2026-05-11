@@ -15,6 +15,7 @@ matches the old CLI-based version so callers don't change.
 
 from __future__ import annotations
 
+import base64
 import os
 import threading
 
@@ -33,7 +34,7 @@ def _load_private_key() -> bytes:
       1. SNOWFLAKE_PRIVATE_KEY_PATH : filesystem path to a PEM file (preferred
          for local dev; avoids the multi-line-env-var pain).
       2. SNOWFLAKE_PRIVATE_KEY : PEM string in env (used in Railway / prod).
-         Allows literal newlines OR `\\n` escapes.
+         Allows raw PEM, literal `\\n` escapes, or base64-encoded PEM.
     """
     from pathlib import Path
 
@@ -51,8 +52,11 @@ def _load_private_key() -> bytes:
             raise RuntimeError(
                 "Neither SNOWFLAKE_PRIVATE_KEY_PATH nor SNOWFLAKE_PRIVATE_KEY is set"
             )
-        # Allow keys with literal newlines OR `\n` escapes
-        pem_bytes = pem.replace("\\n", "\n").encode("utf-8")
+        normalized = pem.strip().replace("\\n", "\n")
+        if normalized.startswith("-----BEGIN "):
+            pem_bytes = normalized.encode("utf-8")
+        else:
+            pem_bytes = base64.b64decode(normalized, validate=True)
 
     passphrase = os.environ.get("SNOWFLAKE_PRIVATE_KEY_PASSPHRASE")
     pk = serialization.load_pem_private_key(
