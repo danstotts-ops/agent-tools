@@ -50,7 +50,7 @@ async def _allow_all_tools(tool_name: str, tool_input: dict, context):
 from .slack.client import post_in_thread
 
 DEFAULT_MEMORY_DIR = Path.home() / ".claude" / "projects" / "-Users-danstotts" / "memory"
-DEFAULT_MODEL = "claude-sonnet-4-6"
+DEFAULT_MODEL = "claude-fable-5"
 DEFAULT_MAX_TURNS = 12
 
 
