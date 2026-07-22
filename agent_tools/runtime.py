@@ -115,6 +115,29 @@ def _build_user_msg(text: str, thread_context: list[dict] | None) -> str:
     return "\n".join(pieces)
 
 
+def _apply_output_transform(
+    text: str, transform: Callable[[str], str] | None
+) -> str:
+    """Apply an optional output transform to the model's final answer.
+
+    Used by agents that need a hard, deterministic post-processing pass over
+    the reply the SDK produces (e.g. a Slack-mrkdwn cleanup / house-style
+    sanitizer that must run even when the system prompt slips). Kept as a
+    standalone helper so it is unit-testable without the SDK or Slack.
+
+    Never raises: a None transform or empty text is a no-op, and a transform
+    that throws logs and returns the original text so it can never block the
+    Slack post.
+    """
+    if not text or transform is None:
+        return text
+    try:
+        return transform(text)
+    except Exception:
+        traceback.print_exc()
+        return text
+
+
 async def run_ask_async(
     *,
     text: str,
@@ -130,6 +153,7 @@ async def run_ask_async(
     extra_dirs: list[str] | None = None,
     disallowed_tools: list[str] | None = None,
     on_complete: Callable[[dict], None] | None = None,
+    output_transform: Callable[[str], str] | None = None,
 ) -> str:
     """Run one Slack ask through the agent loop. Returns the posted message ts.
 
@@ -164,6 +188,12 @@ async def run_ask_async(
     on_complete
         Callback invoked after the reply is posted with a telemetry dict.
         Use this to persist metrics in your agent's metrics module.
+    output_transform
+        Optional post-processing applied to the model's final answer before it
+        is posted to Slack. Use for a hard house-style / mrkdwn sanitizer that
+        must run even when the system prompt slips (e.g. content-review-agent's
+        _clean_for_slack em-dash guardrail). Not applied to error fallbacks;
+        a transform that raises is logged and ignored.
     """
     setting_sources = ["user"] + (extra_setting_sources or [])
     add_dirs = [str(DEFAULT_MEMORY_DIR)] + (extra_dirs or [])
@@ -228,6 +258,10 @@ async def run_ask_async(
         traceback.print_exc()
         error_msg = f"{type(exc).__name__}: {str(exc)[:300]}"
 
+    # House-style / mrkdwn sanitizer, opt-in per agent. Runs only on real model
+    # output, never on the error fallback below, and never breaks the post.
+    final_text = _apply_output_transform(final_text, output_transform)
+
     if not final_text:
         final_text = (
             f":x: agent error: `{error_msg}`"
@@ -279,6 +313,7 @@ def run_ask(
     extra_dirs: list[str] | None = None,
     disallowed_tools: list[str] | None = None,
     on_complete: Callable[[dict], None] | None = None,
+    output_transform: Callable[[str], str] | None = None,
 ) -> str:
     """Sync wrapper for run_ask_async. Most agents call this from their listener."""
     return asyncio.run(
@@ -296,5 +331,6 @@ def run_ask(
             extra_dirs=extra_dirs,
             disallowed_tools=disallowed_tools,
             on_complete=on_complete,
+            output_transform=output_transform,
         )
     )
