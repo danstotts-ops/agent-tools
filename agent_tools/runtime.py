@@ -51,10 +51,10 @@ async def _allow_all_tools(tool_name: str, tool_input: dict, context):
 from .slack.client import post_in_thread
 
 DEFAULT_MEMORY_DIR = Path.home() / ".claude" / "projects" / "-Users-danstotts" / "memory"
-# Cost tiering (2026-07-14): fleet default is Sonnet 5; procedural agent work does not
-# need a frontier model. Override per service with AGENT_MODEL (e.g. on Railway) for
-# agents that need Opus-tier judgment. Escalation guidance lives in each agent's prompt.
-DEFAULT_MODEL = os.environ.get("AGENT_MODEL", "claude-sonnet-5")
+# Model policy (2026-07-24, set by Dan): fleet default is Opus 5. Fable is retired —
+# never set this to claude-fable-5. Override per service with AGENT_MODEL (e.g. on
+# Railway) for high-frequency mechanical paths that should stay on a cheaper tier.
+DEFAULT_MODEL = os.environ.get("AGENT_MODEL", "claude-opus-5")
 DEFAULT_MAX_TURNS = 12
 
 
