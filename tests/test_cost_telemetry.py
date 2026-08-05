@@ -1,19 +1,37 @@
 """Unit tests for agent_tools.cost_telemetry.
 
-Two properties matter most:
+Three properties matter most:
 1. Cost math is exact against the published per-MTok rates (unknown models
    yield None, never a guessed number).
 2. Emission never raises and never blocks the caller, even with a dead or
    unroutable sink. Telemetry must not be able to take an agent down.
+3. An event emitted immediately before interpreter exit is still delivered.
+   Without the atexit flush the daemon delivery thread is killed at exit and
+   the event vanishes, which would silently undercount every short-lived
+   cron and CLI run.
 """
 from __future__ import annotations
 
+import subprocess
+import sys
+import threading
 import time
 
 import pytest
 
 from agent_tools import cost_telemetry
-from agent_tools.cost_telemetry import compute_cost_usd, emit_llm_call
+from agent_tools.cost_telemetry import compute_cost_usd, emit_llm_call, flush
+
+
+# Delivery threads are process-global. Drain between tests so one test's
+# in-flight thread can never be counted by the next test's assertions.
+@pytest.fixture(autouse=True)
+def _drain_inflight():
+    yield
+    try:
+        flush(timeout=5)
+    except Exception:
+        pass
 
 
 # ---- cost math -------------------------------------------------------------
@@ -203,3 +221,160 @@ def test_runtime_helper_skips_without_identity_or_usage(monkeypatch):
     monkeypatch.delenv("AGENT_NAME", raising=False)
     runtime._emit_cost_telemetry(agent_name=None, model="m", usage={"input_tokens": 1})
     runtime._emit_cost_telemetry(agent_name="a", model="m", usage={})
+
+
+# ---- atexit flush: delivery survives a fast-exiting process ----------------
+
+# A local one-shot HTTP receiver stands in for PostHog, so the assertion is
+# "the POST actually arrived", not merely "we called something".
+_RECEIVER = '''
+import http.server, threading
+
+received = []
+
+class H(http.server.BaseHTTPRequestHandler):
+    def do_POST(self):
+        n = int(self.headers.get("Content-Length") or 0)
+        received.append(self.rfile.read(n))
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"ok")
+    def log_message(self, *a):
+        pass
+
+srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+threading.Thread(target=srv.serve_forever, daemon=True).start()
+PORT = srv.server_port
+'''
+
+
+def _repo_root() -> str:
+    from pathlib import Path
+
+    return str(Path(cost_telemetry.__file__).resolve().parent.parent)
+
+
+def _fast_exit_script(*, disable_flush: bool = False) -> str:
+    """A process that emits one event and immediately falls off the end.
+
+    No sleep and no join: only the atexit flush can get the POST out. The
+    receiver lives in the same process, and the result is printed from an
+    atexit callback registered BEFORE the flush runs, so it prints after
+    the flush has had its turn (atexit runs LIFO).
+    """
+    kill = (
+        "import atexit as _a, agent_tools.cost_telemetry as _ct; _a.unregister(_ct.flush)\n"
+        if disable_flush
+        else ""
+    )
+    return (
+        "import os, sys, atexit\n"
+        f"sys.path.insert(0, {_repo_root()!r})\n"
+        + _RECEIVER
+        + 'os.environ["POSTHOG_CAPTURE_URL"] = f"http://127.0.0.1:{PORT}/capture"\n'
+        + 'atexit.register(lambda: print("RECEIVED", len(received)))\n'
+        + kill
+        + "from agent_tools.cost_telemetry import emit_llm_call\n"
+        + 'emit_llm_call(agent="exit-test", model="claude-haiku-4-5",\n'
+        + '              input_tokens=5, output_tokens=5, purpose="fast_exit")\n'
+    )
+
+
+def _run(script: str) -> str:
+    proc = subprocess.run(
+        [sys.executable, "-c", script], capture_output=True, text=True, timeout=60
+    )
+    return proc.stdout + proc.stderr
+
+
+def test_event_emitted_just_before_exit_is_delivered():
+    """The regression this flush exists for."""
+    out = _run(_fast_exit_script())
+    assert "RECEIVED 1" in out, out
+
+
+def test_without_the_flush_the_same_event_is_lost():
+    """Pins why the flush is load-bearing: unregister it and the event vanishes."""
+    out = _run(_fast_exit_script(disable_flush=True))
+    assert "RECEIVED 0" in out, out
+
+
+def test_flush_is_bounded_when_the_sink_hangs(monkeypatch):
+    """A wedged sink must not hold a process open past the budget."""
+    started = threading.Event()
+    release = threading.Event()
+
+    def hang(_event):
+        started.set()
+        release.wait(30)  # outlives the flush budget; released during cleanup
+        return 200
+
+    monkeypatch.setattr(cost_telemetry, "capture", hang)
+    monkeypatch.delenv("AGENT_COST_TELEMETRY_DISABLED", raising=False)
+
+    try:
+        emit_llm_call(
+            agent="hang-test", model="claude-haiku-4-5", input_tokens=1, output_tokens=1
+        )
+        assert started.wait(5), "delivery thread never started"
+
+        t0 = time.monotonic()
+        ok = flush(timeout=0.5)
+        elapsed = time.monotonic() - t0
+
+        assert ok is False        # reported incomplete rather than silently "fine"
+        assert elapsed < 3.0      # bounded well under the 30s hang
+        assert elapsed >= 0.4     # actually waited its budget
+    finally:
+        # Let the thread finish and deregister so it cannot leak into
+        # later tests (the product prunes on completion, not on timeout).
+        release.set()
+        flush(timeout=5)
+
+
+def test_flush_returns_immediately_when_nothing_in_flight():
+    t0 = time.monotonic()
+    assert flush() is True
+    assert time.monotonic() - t0 < 0.2  # long-running services pay nothing at exit
+
+
+def test_flush_never_raises(monkeypatch):
+    class Exploding:
+        def __iter__(self):
+            raise RuntimeError("registry is broken")
+
+        def __enter__(self):
+            raise RuntimeError("registry is broken")
+
+    monkeypatch.setattr(cost_telemetry, "_inflight", Exploding())
+    assert flush(timeout=0.1) is False
+
+
+def test_delivery_threads_deregister_and_do_not_leak(monkeypatch):
+    seen: list[dict] = []
+    monkeypatch.setattr(cost_telemetry, "capture", lambda e: seen.append(e) or 200)
+    monkeypatch.delenv("AGENT_COST_TELEMETRY_DISABLED", raising=False)
+
+    for _ in range(5):
+        emit_llm_call(
+            agent="dereg", model="claude-haiku-4-5", input_tokens=1, output_tokens=1
+        )
+    assert flush(timeout=10) is True
+    assert len(seen) == 5
+    with cost_telemetry._inflight_lock:
+        assert cost_telemetry._inflight == set()
+
+
+def test_blocking_path_is_unchanged_by_tracking(monkeypatch):
+    """block=True must still deliver inline and register nothing."""
+    seen: list[dict] = []
+    monkeypatch.setattr(cost_telemetry, "capture", lambda e: seen.append(e) or 200)
+    monkeypatch.delenv("AGENT_COST_TELEMETRY_DISABLED", raising=False)
+
+    emit_llm_call(
+        agent="inline", model="claude-haiku-4-5",
+        input_tokens=1, output_tokens=1, block=True,
+    )
+    assert len(seen) == 1
+    with cost_telemetry._inflight_lock:
+        assert cost_telemetry._inflight == set()

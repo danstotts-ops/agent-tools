@@ -25,6 +25,11 @@ Guarantees:
 - ``emit_llm_call`` never raises and never blocks the caller. Delivery
   happens on a daemon thread with a short timeout; on any failure it logs
   a warning and drops the event. Telemetry must never take an agent down.
+- At interpreter exit an ``atexit`` handler waits briefly for in-flight
+  delivery threads, bounded by ``FLUSH_TIMEOUT_S`` in total. Without it a
+  short-lived process (a cron job, a CLI one-shot) exits before its daemon
+  thread finishes the POST and the event is silently lost, which would
+  undercount exactly the runs nobody is watching.
 - ``cost_usd`` is computed from ``PRICES_PER_MTOK``. Unknown models emit
   ``cost_usd=None`` alongside the raw token counts so cost can be
   backfilled once the rate is known. Do not invent rates.
@@ -38,10 +43,12 @@ Environment:
 """
 from __future__ import annotations
 
+import atexit
 import json
 import logging
 import os
 import threading
+import time
 import urllib.request
 
 log = logging.getLogger("agent_tools.cost_telemetry")
@@ -52,6 +59,13 @@ DEFAULT_POSTHOG_PROJECT_API_KEY = "phc_AYL8fNwqZy4Rf4bhpWpA2guti7HHK4gudCr7GtZSg
 DEFAULT_POSTHOG_CAPTURE_URL = "https://us.i.posthog.com/i/v0/e/"
 EVENT_NAME = "agent_llm_call"
 REQUEST_TIMEOUT_S = 3.0
+# Total budget the atexit flush may spend waiting for in-flight deliveries.
+# Bounded on purpose: a wedged sink must not hold a process open at exit.
+FLUSH_TIMEOUT_S = 4.0
+
+# In-flight delivery threads, so the atexit handler knows what to wait for.
+_inflight: set[threading.Thread] = set()
+_inflight_lock = threading.Lock()
 
 # USD per million tokens: input, output, cache read, cache write (5-minute
 # TTL writes). Rates are Anthropic's published price list; cache read is
@@ -139,7 +153,7 @@ def emit_llm_call(
         if block:
             _post_safe(event)
         else:
-            threading.Thread(target=_post_safe, args=(event,), daemon=True).start()
+            _spawn_delivery(event)
     except Exception:  # noqa: BLE001 - telemetry must never break the caller
         log.warning("cost telemetry emission failed; event dropped", exc_info=True)
     return cost
@@ -167,3 +181,60 @@ def _post_safe(event: dict) -> None:
             log.warning("PostHog capture returned HTTP %s; event dropped", status)
     except Exception as exc:  # noqa: BLE001
         log.warning("PostHog capture failed (%s); event dropped", exc)
+
+
+def _spawn_delivery(event: dict) -> None:
+    """Start a tracked daemon thread to deliver one event.
+
+    Registration is what lets ``flush`` wait for the POST at interpreter
+    exit. Threads stay daemon so a hung sink can never wedge the process
+    beyond the flush's own bounded wait.
+    """
+    thread = threading.Thread(target=_deliver, args=(event,), daemon=True)
+    with _inflight_lock:
+        _inflight.add(thread)
+    thread.start()
+
+
+def _deliver(event: dict) -> None:
+    try:
+        _post_safe(event)
+    finally:
+        with _inflight_lock:
+            _inflight.discard(threading.current_thread())
+
+
+def flush(timeout: float | None = None) -> bool:
+    """Wait for in-flight deliveries. Returns True if all finished in time.
+
+    Bounded by ``timeout`` (default ``FLUSH_TIMEOUT_S``) across *all*
+    threads, not per thread, so total exit delay stays predictable. Never
+    raises. A normal long-running service reaches exit with nothing in
+    flight and returns immediately.
+    """
+    budget = FLUSH_TIMEOUT_S if timeout is None else timeout
+    deadline = time.monotonic() + budget
+    try:
+        with _inflight_lock:
+            pending = list(_inflight)
+        for thread in pending:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            thread.join(remaining)
+        with _inflight_lock:
+            still_running = [t for t in _inflight if t.is_alive()]
+        if still_running:
+            log.warning(
+                "cost telemetry flush timed out with %d delivery(s) in flight; "
+                "those events are dropped",
+                len(still_running),
+            )
+            return False
+        return True
+    except Exception:  # noqa: BLE001 - exit path must never raise
+        log.warning("cost telemetry flush failed", exc_info=True)
+        return False
+
+
+atexit.register(flush)
