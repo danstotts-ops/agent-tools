@@ -9,7 +9,8 @@ All 11 agents (fpa, cos, strategy, revops, video, web, content-review, pmm, mark
 This package centralizes:
 
 - **Standard runtime** (`agent_tools.runtime`): one wrapper around `ClaudeSDKClient` that every agent uses. Handles the agent loop, error-into-Slack hook, telemetry, memory injection, and the `claude_code` system-prompt preset.
-- **MCP servers** (`agent_tools.slack`, `agent_tools.snowflake`, `agent_tools.notion`, `agent_tools.drive`, ...): one canonical implementation per service, imported by every agent that needs it.
+- **Cost telemetry** (`agent_tools.cost_telemetry`): the canonical per-call LLM cost emitter. Computes cost_usd from a per-MTok price table and captures an `agent_llm_call` PostHog event with the agent name as the dimension. Fire-and-forget, never raises. Agents on the runtime get it for free via `AGENT_NAME` (or the `agent_name=` argument).
+- **MCP servers** (`agent_tools.slack`, `agent_tools.snowflake`, `agent_tools.notion`, `agent_tools.drive`, `agent_tools.google`, ...): one canonical implementation per service, imported by every agent that needs it.
 - **Smoke-test harness** (`agent_tools.smoke`): pre-deploy probe that catches token expiry, schema drift, and MCP misconfiguration before users hit it in Slack.
 
 ## Layout
@@ -17,7 +18,9 @@ This package centralizes:
 ```
 agent_tools/
   runtime.py            # ClaudeSDKClient wrapper, run_ask() entry point
+  cost_telemetry.py     # per-call LLM cost events -> PostHog (agent_llm_call)
   smoke.py              # smoke-test harness
+  legacy.py             # wrap_legacy_tools(): flat TOOLS + dispatch -> one MCP server
   slack/
     client.py           # Slack API wrapper (lifted from fpa-agent-cloud)
     mcp.py              # MCP server: post_in_thread, list_channel_messages, get_thread
@@ -30,6 +33,9 @@ agent_tools/
   drive/
     client.py           # Google Drive read-only via OAuth user token
     mcp.py              # MCP server: drive_search_files, drive_get_file_metadata, drive_read_file_content, drive_list_recent_files
+  google/
+    client.py           # Google REST client: GA4, Search Console, Tag Manager, YouTube (OAuth refresh token or ADC)
+    mcp.py              # MCP servers, one per product: ga4_server, gsc_server, gtm_server, youtube_server
 ```
 
 ## Usage from an agent
@@ -78,6 +84,7 @@ pip install -e ~/agent-tools
 Each MCP server reads its own credentials from env. Agents must set these in `.env` (local) or Railway env (prod):
 
 - **Slack**: `SLACK_BOT_TOKEN`, `SLACK_USER_TOKEN`
+- **Cost telemetry**: `AGENT_NAME` (identity on the `agent_llm_call` event; without it the runtime skips emission). Optional: `POSTHOG_PROJECT_API_KEY` / `POSTHOG_CAPTURE_URL` override the embedded public capture token and endpoint; `AGENT_COST_TELEMETRY_DISABLED=1` turns emission off.
 - **Snowflake**: `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USER`, `SNOWFLAKE_PRIVATE_KEY`, `SNOWFLAKE_PRIVATE_KEY_PASSPHRASE`, `SNOWFLAKE_ROLE`, `SNOWFLAKE_WAREHOUSE`, `SNOWFLAKE_DATABASE`
 - **Notion**: `NOTION_API_TOKEN`
 - **Drive**: `DRIVE_ACCESS_TOKEN`, `DRIVE_REFRESH_TOKEN`, `DRIVE_OAUTH_CLIENT_ID`, `DRIVE_OAUTH_CLIENT_SECRET`
