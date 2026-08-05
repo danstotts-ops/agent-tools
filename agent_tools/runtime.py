@@ -9,6 +9,9 @@ with its own system prompt + MCP servers. The wrapper provides:
   - A PostToolUse hook that posts tool errors back into the Slack thread
     so failures are visible in real time, not buried in Railway logs
   - Optional on_complete callback for telemetry / metrics persistence
+  - Per-ask LLM cost telemetry via agent_tools.cost_telemetry (PostHog
+    event `agent_llm_call`). Free for any agent that sets AGENT_NAME in
+    its environment or passes agent_name=; fire-and-forget, never raises.
 
 Sync entry point: `run_ask(...)`
 Async entry point: `run_ask_async(...)`
@@ -138,6 +141,36 @@ def _apply_output_transform(
         return text
 
 
+def _emit_cost_telemetry(
+    *, agent_name: str | None, model: str, usage: dict, purpose: str = "run_ask"
+) -> None:
+    """Fire one agent_llm_call cost event for a completed ask.
+
+    Agent identity comes from the explicit agent_name argument, falling back
+    to the AGENT_NAME env var. Without a name (or without usage data) this is
+    a silent no-op. Delegates to agent_tools.cost_telemetry.emit_llm_call,
+    which is fire-and-forget and never raises; the extra guard here keeps
+    even an import-time surprise from touching the Slack reply path.
+    """
+    try:
+        agent = agent_name or os.environ.get("AGENT_NAME") or ""
+        if not agent or not usage:
+            return
+        from .cost_telemetry import emit_llm_call
+
+        emit_llm_call(
+            agent=agent,
+            model=model,
+            input_tokens=int(usage.get("input_tokens") or 0),
+            output_tokens=int(usage.get("output_tokens") or 0),
+            cache_read_tokens=int(usage.get("cache_read_input_tokens") or 0),
+            cache_write_tokens=int(usage.get("cache_creation_input_tokens") or 0),
+            purpose=purpose,
+        )
+    except Exception:
+        traceback.print_exc()
+
+
 async def run_ask_async(
     *,
     text: str,
@@ -154,6 +187,7 @@ async def run_ask_async(
     disallowed_tools: list[str] | None = None,
     on_complete: Callable[[dict], None] | None = None,
     output_transform: Callable[[str], str] | None = None,
+    agent_name: str | None = None,
 ) -> str:
     """Run one Slack ask through the agent loop. Returns the posted message ts.
 
@@ -194,6 +228,10 @@ async def run_ask_async(
         must run even when the system prompt slips (e.g. content-review-agent's
         _clean_for_slack em-dash guardrail). Not applied to error fallbacks;
         a transform that raises is logged and ignored.
+    agent_name
+        Identity used as the distinct_id on the agent_llm_call PostHog cost
+        event. Defaults to the AGENT_NAME env var; when neither is set the
+        cost event is skipped (everything else still works).
     """
     setting_sources = ["user"] + (extra_setting_sources or [])
     add_dirs = [str(DEFAULT_MEMORY_DIR)] + (extra_dirs or [])
@@ -279,6 +317,10 @@ async def run_ask_async(
         posted = post_in_thread(channel_id, thread_ts, final_text)
     duration = time.time() - t0
 
+    # Per-ask cost telemetry (PostHog agent_llm_call). Fire-and-forget;
+    # never blocks or breaks the reply path.
+    _emit_cost_telemetry(agent_name=agent_name, model=model, usage=usage)
+
     if on_complete is not None:
         try:
             on_complete({
@@ -314,6 +356,7 @@ def run_ask(
     disallowed_tools: list[str] | None = None,
     on_complete: Callable[[dict], None] | None = None,
     output_transform: Callable[[str], str] | None = None,
+    agent_name: str | None = None,
 ) -> str:
     """Sync wrapper for run_ask_async. Most agents call this from their listener."""
     return asyncio.run(
@@ -332,5 +375,6 @@ def run_ask(
             disallowed_tools=disallowed_tools,
             on_complete=on_complete,
             output_transform=output_transform,
+            agent_name=agent_name,
         )
     )
