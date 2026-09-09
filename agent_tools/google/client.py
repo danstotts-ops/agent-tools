@@ -1,11 +1,20 @@
 """Google REST client for GA4, Search Console, Tag Manager, and YouTube.
 
-Auth (two sources, in order):
+Auth (three sources, in order):
   1. GOOGLE_OAUTH_REFRESH_TOKEN (+ GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET):
      a stored user OAuth grant. Used in Railway / prod. Mirrors how the
      snowflake client takes a PEM key from env.
   2. Application Default Credentials (google.auth.default): local dev after
      `gcloud auth application-default login`.
+  3. GOOGLE_API_KEY: last resort, and ONLY for the public YouTube reads listed in
+     `_key_eligible`. A key identifies the caller, not a user, so it cannot serve
+     GA4/GSC/GTM or anything scoped to a signed-in account. It exists so a service
+     that only needs public channel and video statistics can hold a restricted key
+     instead of a user grant carrying analytics.edit and tagmanager.publish.
+
+Sources 1 and 2 always win when they produce a working credential, so adding a
+key changes nothing for callers that already have one. The key path engages only
+when the OAuth/ADC lookup fails outright or its refresh is rejected.
 
 All calls go over a google-auth AuthorizedSession (requests transport) with an
 explicit timeout. We deliberately avoid googleapiclient/httplib2: httplib2 has
@@ -38,8 +47,12 @@ GSC = "https://searchconsole.googleapis.com/webmasters/v3"
 GTM = "https://tagmanager.googleapis.com/tagmanager/v2"
 YT = "https://youtube.googleapis.com/youtube/v3"
 
+API_KEY_ENV = "GOOGLE_API_KEY"
+
 _LOCK = threading.Lock()
 _SESSION = None
+_SESSION_ERROR = None
+_PLAIN_SESSION = None
 
 
 class GoogleApiError(Exception):
@@ -74,20 +87,89 @@ def _build_credentials():
 
 
 def _session():
-    global _SESSION
+    global _SESSION, _SESSION_ERROR
     if _SESSION is None:
         with _LOCK:
             if _SESSION is None:
+                if _SESSION_ERROR is not None:
+                    # Cached: on a host with no ADC file and no metadata server,
+                    # google.auth.default() can burn seconds before failing, and
+                    # collect_youtube alone makes ~26 calls.
+                    raise _SESSION_ERROR
                 from google.auth.transport.requests import AuthorizedSession
 
-                _SESSION = AuthorizedSession(_build_credentials())
+                try:
+                    _SESSION = AuthorizedSession(_build_credentials())
+                except _auth_error_types() as exc:
+                    _SESSION_ERROR = exc
+                    raise
     return _SESSION
 
 
+def _api_key() -> str:
+    return os.environ.get(API_KEY_ENV, "").strip()
+
+
+def _plain_session():
+    """Unauthenticated requests session for API-key calls."""
+    global _PLAIN_SESSION
+    if _PLAIN_SESSION is None:
+        with _LOCK:
+            if _PLAIN_SESSION is None:
+                import requests
+
+                _PLAIN_SESSION = requests.Session()
+    return _PLAIN_SESSION
+
+
+def _key_eligible(method: str, url: str, params=None) -> bool:
+    """True when a bare API key can serve this request.
+
+    Only the YouTube Data API's public reads qualify: channels/search/videos
+    addressed by id. `mine=true` resolves against the signed-in account and a
+    key has no account, so it is excluded along with every write and every
+    GA4/GSC/GTM endpoint.
+    """
+    if method.upper() != "GET":
+        return False
+    if not url.startswith(YT):
+        return False
+    return "mine" not in (params or {})
+
+
+def _auth_error_types() -> tuple[type[BaseException], ...]:
+    """Credential failures worth falling back on, not HTTP or transport errors.
+
+    google.auth raises DefaultCredentialsError when nothing resolves and
+    RefreshError when a stored grant is rejected (revoked, expired, or asking
+    for scopes it was never granted). Both derive from GoogleAuthError.
+    """
+    try:
+        from google.auth import exceptions as ga_exceptions
+    except ImportError:  # google-auth absent entirely
+        return (Exception,)
+    return (ga_exceptions.GoogleAuthError,)
+
+
 def _request(method: str, url: str, *, params=None, json_body=None) -> Any:
-    resp = _session().request(
-        method, url, params=params, json=json_body, timeout=HTTP_TIMEOUT
-    )
+    try:
+        resp = _session().request(
+            method, url, params=params, json=json_body, timeout=HTTP_TIMEOUT
+        )
+    except _auth_error_types():
+        # No usable user credential. A restricted key can still serve the public
+        # YouTube reads; for anything else the credential error is the real
+        # answer and must not be masked by a key that cannot work.
+        key = _api_key()
+        if not (key and _key_eligible(method, url, params)):
+            raise
+        resp = _plain_session().request(
+            method,
+            url,
+            params={**(params or {}), "key": key},
+            json=json_body,
+            timeout=HTTP_TIMEOUT,
+        )
     if resp.status_code >= 400:
         raise GoogleApiError(f"HTTP {resp.status_code} {method} {url}: {resp.text[:400]}")
     if not resp.content:

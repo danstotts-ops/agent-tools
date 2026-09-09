@@ -119,3 +119,154 @@ def test_gated_execute_when_not_dry_run():
 
 def test_servers_exist():
     assert set(mcp.GOOGLE_SERVERS) == {"ga4", "gsc", "gtm", "youtube"}
+
+
+# ---- API-key fallback (client) ----
+
+
+@pytest.fixture(autouse=True)
+def _reset_client_state(monkeypatch):
+    """Clear the session singletons and the negative cache between tests."""
+    monkeypatch.setattr(client, "_SESSION", None, raising=False)
+    monkeypatch.setattr(client, "_SESSION_ERROR", None, raising=False)
+    monkeypatch.setattr(client, "_PLAIN_SESSION", None, raising=False)
+    monkeypatch.delenv(client.API_KEY_ENV, raising=False)
+    yield
+
+
+def _no_credentials(monkeypatch):
+    """Make the OAuth/ADC path fail the way an uncredentialed host does."""
+    from google.auth import exceptions as ga_exceptions
+
+    def boom():
+        raise ga_exceptions.DefaultCredentialsError("no ADC here")
+
+    monkeypatch.setattr(client, "_build_credentials", boom)
+
+
+def test_public_youtube_read_falls_back_to_api_key(monkeypatch):
+    _no_credentials(monkeypatch)
+    monkeypatch.setenv(client.API_KEY_ENV, "AIza-test-key")
+    plain = _FakeSession()
+    monkeypatch.setattr(client, "_plain_session", lambda: plain)
+
+    client.yt_get_video("vid123")
+
+    call = plain.calls[-1]
+    assert call["method"] == "GET"
+    assert call["url"].endswith("/videos")
+    assert call["params"]["key"] == "AIza-test-key"
+    # the caller's own params survive alongside the key
+    assert call["params"]["id"] == "vid123"
+
+
+def test_channel_videos_search_is_key_eligible(monkeypatch):
+    _no_credentials(monkeypatch)
+    monkeypatch.setenv(client.API_KEY_ENV, "AIza-test-key")
+    plain = _FakeSession()
+    monkeypatch.setattr(client, "_plain_session", lambda: plain)
+
+    client.yt_list_channel_videos("UCrrgg7pwLmCfpF4nlj1cg0Q", max_results=5)
+
+    assert plain.calls[-1]["params"]["key"] == "AIza-test-key"
+    assert plain.calls[-1]["params"]["channelId"] == "UCrrgg7pwLmCfpF4nlj1cg0Q"
+
+
+def test_api_key_does_not_rescue_mine_true(monkeypatch):
+    """mine=true needs an account; a key has none, so do not pretend."""
+    _no_credentials(monkeypatch)
+    monkeypatch.setenv(client.API_KEY_ENV, "AIza-test-key")
+    from google.auth import exceptions as ga_exceptions
+
+    with pytest.raises(ga_exceptions.DefaultCredentialsError):
+        client.yt_list_my_channels()
+
+
+def test_api_key_does_not_rescue_youtube_writes(monkeypatch):
+    _no_credentials(monkeypatch)
+    monkeypatch.setenv(client.API_KEY_ENV, "AIza-test-key")
+    monkeypatch.setattr(
+        client, "yt_get_video", lambda vid: {"items": [{"snippet": {"title": "old"}}]}
+    )
+    from google.auth import exceptions as ga_exceptions
+
+    with pytest.raises(ga_exceptions.DefaultCredentialsError):
+        client.yt_update_video_metadata("vid123", title="new")
+
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        lambda: client.gsc_list_sites(),
+        lambda: client.gtm_list_accounts(),
+        lambda: client.ga4_account_summaries(),
+    ],
+)
+def test_api_key_does_not_rescue_non_youtube_apis(monkeypatch, call):
+    _no_credentials(monkeypatch)
+    monkeypatch.setenv(client.API_KEY_ENV, "AIza-test-key")
+    from google.auth import exceptions as ga_exceptions
+
+    with pytest.raises(ga_exceptions.DefaultCredentialsError):
+        call()
+
+
+def test_credential_error_propagates_without_a_key(monkeypatch):
+    _no_credentials(monkeypatch)
+    from google.auth import exceptions as ga_exceptions
+
+    with pytest.raises(ga_exceptions.DefaultCredentialsError):
+        client.yt_get_video("vid123")
+
+
+def test_refresh_rejection_also_falls_back(monkeypatch):
+    """A stored grant missing a scope raises at refresh, not at construction."""
+    from google.auth import exceptions as ga_exceptions
+
+    class RefusingSession:
+        def request(self, *a, **k):
+            raise ga_exceptions.RefreshError("invalid_scope")
+
+    monkeypatch.setattr(client, "_SESSION", RefusingSession())
+    monkeypatch.setenv(client.API_KEY_ENV, "AIza-test-key")
+    plain = _FakeSession()
+    monkeypatch.setattr(client, "_plain_session", lambda: plain)
+
+    client.yt_get_video("vid123")
+
+    assert plain.calls[-1]["params"]["key"] == "AIza-test-key"
+
+
+def test_oauth_session_still_wins_when_it_works(monkeypatch):
+    """A key present alongside a working credential must not change routing."""
+    authed = _FakeSession()
+    monkeypatch.setattr(client, "_SESSION", authed)
+    monkeypatch.setenv(client.API_KEY_ENV, "AIza-test-key")
+    plain = _FakeSession()
+    monkeypatch.setattr(client, "_plain_session", lambda: plain)
+
+    client.yt_get_video("vid123")
+
+    assert len(authed.calls) == 1
+    assert plain.calls == []
+    assert "key" not in authed.calls[-1]["params"]
+
+
+def test_adc_lookup_is_attempted_once(monkeypatch):
+    """The negative cache keeps a 26-call collect from 26 slow ADC lookups."""
+    from google.auth import exceptions as ga_exceptions
+
+    attempts = {"n": 0}
+
+    def boom():
+        attempts["n"] += 1
+        raise ga_exceptions.DefaultCredentialsError("no ADC here")
+
+    monkeypatch.setattr(client, "_build_credentials", boom)
+    monkeypatch.setenv(client.API_KEY_ENV, "AIza-test-key")
+    monkeypatch.setattr(client, "_plain_session", lambda: _FakeSession())
+
+    for _ in range(4):
+        client.yt_get_video("vid123")
+
+    assert attempts["n"] == 1
