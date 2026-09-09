@@ -34,7 +34,7 @@ agent_tools/
     client.py           # Google Drive read-only via OAuth user token
     mcp.py              # MCP server: drive_search_files, drive_get_file_metadata, drive_read_file_content, drive_list_recent_files
   google/
-    client.py           # Google REST client: GA4, Search Console, Tag Manager, YouTube (OAuth refresh token or ADC)
+    client.py           # Google REST client: GA4, Search Console, Tag Manager, YouTube (OAuth refresh token, ADC, or GOOGLE_API_KEY for public YouTube reads only)
     mcp.py              # MCP servers, one per product: ga4_server, gsc_server, gtm_server, youtube_server
 ```
 
