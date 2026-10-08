@@ -188,6 +188,7 @@ async def run_ask_async(
     on_complete: Callable[[dict], None] | None = None,
     output_transform: Callable[[str], str] | None = None,
     agent_name: str | None = None,
+    mention_owner: bool = True,
 ) -> str:
     """Run one Slack ask through the agent loop. Returns the posted message ts.
 
@@ -232,6 +233,10 @@ async def run_ask_async(
         Identity used as the distinct_id on the agent_llm_call PostHog cost
         event. Defaults to the AGENT_NAME env var; when neither is set the
         cost event is skipped (everything else still works).
+    mention_owner
+        Prefix the reply with <@token owner> (default True). Pass False for
+        agents in shared channels; replies to an owner's own thread already
+        notify him. Mid-run tool-error warnings always tag him.
     """
     setting_sources = ["user"] + (extra_setting_sources or [])
     add_dirs = [str(DEFAULT_MEMORY_DIR)] + (extra_dirs or [])
@@ -314,7 +319,9 @@ async def run_ask_async(
         print(f"[runtime] smoke channel; skipping Slack post. final_text="
               f"{final_text[:200]!r}", flush=True)
     else:
-        posted = post_in_thread(channel_id, thread_ts, final_text)
+        # The error fallback always tags the owner, since only he can fix it.
+        posted = post_in_thread(channel_id, thread_ts, final_text,
+                                mention=mention_owner or bool(error_msg))
     duration = time.time() - t0
 
     # Per-ask cost telemetry (PostHog agent_llm_call). Fire-and-forget;
@@ -357,6 +364,7 @@ def run_ask(
     on_complete: Callable[[dict], None] | None = None,
     output_transform: Callable[[str], str] | None = None,
     agent_name: str | None = None,
+    mention_owner: bool = True,
 ) -> str:
     """Sync wrapper for run_ask_async. Most agents call this from their listener."""
     return asyncio.run(
@@ -376,5 +384,6 @@ def run_ask(
             on_complete=on_complete,
             output_transform=output_transform,
             agent_name=agent_name,
+            mention_owner=mention_owner,
         )
     )
