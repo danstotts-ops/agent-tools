@@ -44,9 +44,12 @@ def get_thread(channel: str, thread_ts: str) -> dict:
     return {"messages": resp.get("messages", [])}
 
 
-def post_in_thread(channel: str, thread_ts: str, text: str) -> dict:
-    """Threaded reply via bot token, prefixed with @Dan so it triggers a notification."""
-    msg = f"{_mention_self()} {text}"
+def post_in_thread(channel: str, thread_ts: str, text: str, mention: bool = True) -> dict:
+    """Threaded reply via bot token, prefixed with @Dan so it triggers a notification.
+
+    mention=False posts without the prefix, for agents in shared channels where
+    teammates ask and a tag on every reply is noise."""
+    msg = f"{_mention_self()} {text}" if mention else text
     resp = _bot_client().chat_postMessage(
         channel=channel,
         thread_ts=thread_ts,
