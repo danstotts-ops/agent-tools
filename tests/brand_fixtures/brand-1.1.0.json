@@ -1,0 +1,1223 @@
+{
+  "$schema": "https://raw.githubusercontent.com/runpod/brand/main/schema/brand.schema.json",
+  "accessibility": {
+    "contrast_body": 4.5,
+    "contrast_large": 3.0,
+    "source": "docs/accessibility.md (WCAG 2.2; 44px is the AAA 2.5.5 target size, chosen above the AA 2.5.8 minimum of 24px)",
+    "status": "canonical",
+    "tap_target_px": 44
+  },
+  "assets": {
+    "bundle_note": "The bundle file names do not match the names on the Notion page or docs/logos.md (for example Runpod-logo-purple-black.png on Notion is Runpod-logo-purple-black-wordmark.png in the bundle). bundle_file records the mapping where the pixels make it unambiguous; rows without one carry a gap. the brand design lead to reconcile the names, on Notion or in the bundle.",
+    "clear_space": {
+      "minimum": "1x symbol internal gap",
+      "preferred": "2x",
+      "source": "docs/clear-space.md",
+      "status": "canonical"
+    },
+    "drive_folder": "https://drive.google.com/drive/folders/0ANmV19dP2oR_Uk9PVA",
+    "files": [
+      {
+        "bytes": 28632,
+        "file": "Runpod-black-icon.png",
+        "format": "png",
+        "height": 1095,
+        "path_in_bundle": "Runpod-Logos-Icons-RGB-and-CMYK-Print/Runpod-logo-rgb/png/icon/Runpod-black-icon.png",
+        "published": true,
+        "sha256": "93255f54aa987e7f0d92f82d5de25c3ddb3b3e31728e0fdfbf871b6ca1d9d5aa",
+        "source": "Brand Assets shared drive, Runpod-Logos-Icons-RGB-and-CMYK-Print.zip",
+        "status": "canonical",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-black-icon.png",
+        "width": 1095
+      },
+      {
+        "bytes": 2073,
+        "file": "Runpod-black-icon.svg",
+        "format": "svg",
+        "path_in_bundle": "Runpod-Logos-Icons-RGB-and-CMYK-Print/Runpod-logo-rgb/svg/icon/Runpod-black-icon.svg",
+        "published": true,
+        "sha256": "1ea13d6d6cb53ba57cd9eb3a80e0b6e1eb4e31a9dee014811fb335a17e9ab219",
+        "source": "Brand Assets shared drive, Runpod-Logos-Icons-RGB-and-CMYK-Print.zip",
+        "status": "canonical",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-black-icon.svg"
+      },
+      {
+        "bytes": 412,
+        "file": "runpod-icon-box-purple-16x16.png",
+        "format": "png",
+        "height": 16,
+        "note": "Favicon: Runpod Purple rounded box with the symbol knocked out to transparency. No Notion row names it.",
+        "path_in_bundle": "png/runpod-icon-box-purple-16x16.png",
+        "published": true,
+        "sha256": "e797ce5600ef9f00a5358c1e0eb0ea70d4d90154b777dc26a19970e046a47235",
+        "source": "Brand Assets shared drive, Runpod-Favicon-App-Icons.zip",
+        "status": "canonical",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/runpod-icon-box-purple-16x16.png",
+        "width": 16
+      },
+      {
+        "bytes": 720,
+        "file": "runpod-icon-box-purple-32x32.png",
+        "format": "png",
+        "height": 32,
+        "note": "Favicon: Runpod Purple rounded box with the symbol knocked out to transparency. No Notion row names it.",
+        "path_in_bundle": "png/runpod-icon-box-purple-32x32.png",
+        "published": true,
+        "sha256": "96baa6ab47c05d5dadc927bbe46f4f4b08da56ac6e01925e14748ca62f0302e2",
+        "source": "Brand Assets shared drive, Runpod-Favicon-App-Icons.zip",
+        "status": "canonical",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/runpod-icon-box-purple-32x32.png",
+        "width": 32
+      },
+      {
+        "bytes": 24663,
+        "file": "Runpod-logo-black-wordmark.png",
+        "format": "png",
+        "height": 440,
+        "path_in_bundle": "Runpod-Logos-Icons-RGB-and-CMYK-Print/Runpod-logo-rgb/png/wordmark/Runpod-logo-black-wordmark.png",
+        "published": true,
+        "sha256": "688b4bf5974f14e3fed9d60e5f4795e0e4380d734598cfd70f7dc723b4e30d53",
+        "source": "Brand Assets shared drive, Runpod-Logos-Icons-RGB-and-CMYK-Print.zip",
+        "status": "canonical",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-logo-black-wordmark.png",
+        "width": 1970
+      },
+      {
+        "bytes": 4382,
+        "file": "Runpod-logo-black-wordmark.svg",
+        "format": "svg",
+        "path_in_bundle": "Runpod-Logos-Icons-RGB-and-CMYK-Print/Runpod-logo-rgb/svg/wordmark/Runpod-logo-black-wordmark.svg",
+        "published": true,
+        "sha256": "aafa994856744619a91ab631588cfbefd50bffdd601f549b3fb56d5b89f88596",
+        "source": "Brand Assets shared drive, Runpod-Logos-Icons-RGB-and-CMYK-Print.zip",
+        "status": "canonical",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-logo-black-wordmark.svg"
+      },
+      {
+        "bytes": 39328,
+        "file": "Runpod-logo-black-wordmark2.png",
+        "format": "png",
+        "height": 440,
+        "note": "Same artwork as Runpod-logo-black-wordmark.png on a filled white background (no transparency). No Notion row names it.",
+        "path_in_bundle": "Runpod-Logos-Icons-RGB-and-CMYK-Print/Runpod-logo-rgb/png/wordmark/Runpod-logo-black-wordmark2.png",
+        "published": true,
+        "sha256": "766be5c2ae4f60920c0eb063aa32056e724d853ec50101e56c54b76f597b35d6",
+        "source": "Brand Assets shared drive, Runpod-Logos-Icons-RGB-and-CMYK-Print.zip",
+        "status": "canonical",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-logo-black-wordmark2.png",
+        "width": 1970
+      },
+      {
+        "bytes": 28689,
+        "file": "Runpod-logo-purple-black-wordmark.png",
+        "format": "png",
+        "height": 440,
+        "path_in_bundle": "Runpod-Logos-Icons-RGB-and-CMYK-Print/Runpod-logo-rgb/png/wordmark/Runpod-logo-purple-black-wordmark.png",
+        "published": true,
+        "sha256": "798014791ab72bee525a52a65f175899162f00e24d743667ceff7c415c12d9f4",
+        "source": "Brand Assets shared drive, Runpod-Logos-Icons-RGB-and-CMYK-Print.zip",
+        "status": "canonical",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-logo-purple-black-wordmark.png",
+        "width": 1970
+      },
+      {
+        "bytes": 4405,
+        "file": "Runpod-logo-purple-black-wordmark.svg",
+        "format": "svg",
+        "path_in_bundle": "Runpod-Logos-Icons-RGB-and-CMYK-Print/Runpod-logo-rgb/svg/wordmark/Runpod-logo-purple-black-wordmark.svg",
+        "published": true,
+        "sha256": "143c90ce832a9612f34d6d6e264fe70084745962a039f68a2bae34e10c487cbe",
+        "source": "Brand Assets shared drive, Runpod-Logos-Icons-RGB-and-CMYK-Print.zip",
+        "status": "canonical",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-logo-purple-black-wordmark.svg"
+      },
+      {
+        "bytes": 29249,
+        "file": "Runpod-logo-purple-black-wordmark2.png",
+        "format": "png",
+        "height": 440,
+        "note": "Same artwork as Runpod-logo-purple-black-wordmark.png on a filled white background (no transparency). No Notion row names it.",
+        "path_in_bundle": "Runpod-Logos-Icons-RGB-and-CMYK-Print/Runpod-logo-rgb/png/wordmark/Runpod-logo-purple-black-wordmark2.png",
+        "published": true,
+        "sha256": "8a41ba12862ca615d7b7cc34e7fab69a11eddda44d2cb19b48cba0805a637cde",
+        "source": "Brand Assets shared drive, Runpod-Logos-Icons-RGB-and-CMYK-Print.zip",
+        "status": "canonical",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-logo-purple-black-wordmark2.png",
+        "width": 1970
+      },
+      {
+        "bytes": 30076,
+        "file": "Runpod-logo-white-wordmark.png",
+        "format": "png",
+        "height": 440,
+        "path_in_bundle": "Runpod-Logos-Icons-RGB-and-CMYK-Print/Runpod-logo-rgb/png/wordmark/Runpod-logo-white-wordmark.png",
+        "published": true,
+        "sha256": "5fc83a0ecd30c48c9e3823c9fdbdba34d601ef833292c5bcd9dba7f98c7a7869",
+        "source": "Brand Assets shared drive, Runpod-Logos-Icons-RGB-and-CMYK-Print.zip",
+        "status": "canonical",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-logo-white-wordmark.png",
+        "width": 1970
+      },
+      {
+        "bytes": 4502,
+        "file": "Runpod-logo-white-wordmark.svg",
+        "format": "svg",
+        "path_in_bundle": "Runpod-Logos-Icons-RGB-and-CMYK-Print/Runpod-logo-rgb/svg/wordmark/Runpod-logo-white-wordmark.svg",
+        "published": true,
+        "sha256": "2137999e0a0c574671de16b4707da1b1bcbc88b7b04c9dedddcc16953afdaede",
+        "source": "Brand Assets shared drive, Runpod-Logos-Icons-RGB-and-CMYK-Print.zip",
+        "status": "canonical",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-logo-white-wordmark.svg"
+      },
+      {
+        "bytes": 33085,
+        "file": "Runpod-purple-icon.png",
+        "format": "png",
+        "height": 1095,
+        "path_in_bundle": "Runpod-Logos-Icons-RGB-and-CMYK-Print/Runpod-logo-rgb/png/icon/Runpod-purple-icon.png",
+        "published": true,
+        "sha256": "10a161e6886b4e6c2a359c3a862277a0db5916d7a60a3ddc8d2ce8bd171efe37",
+        "source": "Brand Assets shared drive, Runpod-Logos-Icons-RGB-and-CMYK-Print.zip",
+        "status": "canonical",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-purple-icon.png",
+        "width": 1095
+      },
+      {
+        "bytes": 2096,
+        "file": "Runpod-purple-icon.svg",
+        "format": "svg",
+        "path_in_bundle": "Runpod-Logos-Icons-RGB-and-CMYK-Print/Runpod-logo-rgb/svg/icon/Runpod-purple-icon.svg",
+        "published": true,
+        "sha256": "29883fe8e51f6c4acc7dddbed823eaf93bb4179a718f57c5453200beb734c2b7",
+        "source": "Brand Assets shared drive, Runpod-Logos-Icons-RGB-and-CMYK-Print.zip",
+        "status": "canonical",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-purple-icon.svg"
+      },
+      {
+        "bytes": 33589,
+        "file": "Runpod-white-icon.png",
+        "format": "png",
+        "height": 1095,
+        "path_in_bundle": "Runpod-Logos-Icons-RGB-and-CMYK-Print/Runpod-logo-rgb/png/icon/Runpod-white-icon.png",
+        "published": true,
+        "sha256": "7be0326bf6a6857abadb7de3eda93d7ebde2422712a7c86538f9b28da6b9e4c2",
+        "source": "Brand Assets shared drive, Runpod-Logos-Icons-RGB-and-CMYK-Print.zip",
+        "status": "canonical",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-white-icon.png",
+        "width": 1095
+      },
+      {
+        "bytes": 2093,
+        "file": "Runpod-white-icon.svg",
+        "format": "svg",
+        "path_in_bundle": "Runpod-Logos-Icons-RGB-and-CMYK-Print/Runpod-logo-rgb/svg/icon/Runpod-white-icon.svg",
+        "published": true,
+        "sha256": "8410ea5460593fdfd4c597f7d2831f63c3dc4d0d901de65adf2b67c6b7579ec4",
+        "source": "Brand Assets shared drive, Runpod-Logos-Icons-RGB-and-CMYK-Print.zip",
+        "status": "canonical",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-white-icon.svg"
+      }
+    ],
+    "fonts": {
+      "location": "Google Drive, same folder as the logos",
+      "note": "Licensed; the files are not published in this repo or in brand.json"
+    },
+    "icons": [
+      {
+        "bundle_file": "Runpod-purple-icon.png",
+        "file": "white-purple-icon.png",
+        "kind": "symbol",
+        "note": "Mapped by name (white background, purple mark, the same background-foreground reading as white-black-icon) and pixels: #5D29F0 symbol on a transparent background.",
+        "sha256": "10a161e6886b4e6c2a359c3a862277a0db5916d7a60a3ddc8d2ce8bd171efe37",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-purple-icon.png",
+        "use": "Primary icon. App icons, favicons, UI components, and small surfaces where the wordmark would lose clarity."
+      },
+      {
+        "bundle_file": null,
+        "file": "purple-white-icon.png",
+        "gap": "No bundle file is a white symbol on a purple field. The closest, runpod-icon-box-purple-16x16/32x32.png, knocks the symbol out to transparency and exists only at favicon sizes. the brand design lead to confirm.",
+        "kind": "symbol",
+        "use": "Alternates. Use when the primary icon lacks sufficient visual separation from the background."
+      },
+      {
+        "bundle_file": "Runpod-white-icon.png",
+        "file": "black-white-icon.png",
+        "kind": "symbol",
+        "note": "Mapped by name (black background, white mark) and pixels: #FFFFFF symbol on a transparent background.",
+        "sha256": "7be0326bf6a6857abadb7de3eda93d7ebde2422712a7c86538f9b28da6b9e4c2",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-white-icon.png",
+        "use": "Alternates. Use when the primary icon lacks sufficient visual separation from the background."
+      },
+      {
+        "bundle_file": "Runpod-black-icon.png",
+        "file": "white-black-icon.png",
+        "kind": "symbol",
+        "note": "Mapped by use (light surfaces) and pixels: #000000 symbol on a transparent background.",
+        "sha256": "93255f54aa987e7f0d92f82d5de25c3ddb3b3e31728e0fdfbf871b6ca1d9d5aa",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-black-icon.png",
+        "use": "Light surfaces. Prioritize clarity and solid contrast."
+      }
+    ],
+    "logos": [
+      {
+        "bundle_file": "Runpod-logo-purple-black-wordmark.png",
+        "file": "Runpod-logo-purple-black.png",
+        "kind": "lockup",
+        "note": "Mapped by pixels: #5D29F0 symbol, #000000 wordmark, transparent background. The bundle's ...wordmark2 copy is the same art on white.",
+        "sha256": "798014791ab72bee525a52a65f175899162f00e24d743667ceff7c415c12d9f4",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-logo-purple-black-wordmark.png",
+        "use": "Default wordmark. Preferred whenever space allows and maximum recognition is required."
+      },
+      {
+        "bundle_file": null,
+        "file": "Runpod-logo-purple.png",
+        "gap": "No bundle file is purple-on-purple: every wordmark is on a transparent or white background. the brand design lead to supply or retire the row.",
+        "kind": "lockup",
+        "use": "Purple-on-purple. For brand-color surfaces where the default mark would lose contrast."
+      },
+      {
+        "bundle_file": "Runpod-logo-black-wordmark.png",
+        "file": "Runpod-logo-white-black.png",
+        "kind": "lockup",
+        "note": "Mapped by use (bright or neutral surfaces) and pixels: #000000 lockup on a transparent background. The Notion use text says white-on-light; the name reads background-foreground.",
+        "sha256": "688b4bf5974f14e3fed9d60e5f4795e0e4380d734598cfd70f7dc723b4e30d53",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-logo-black-wordmark.png",
+        "use": "White-on-light. For bright or neutral surfaces where strong contrast is required."
+      },
+      {
+        "bundle_file": "Runpod-logo-white-wordmark.png",
+        "file": "Runpod-logo-black-white.png",
+        "kind": "lockup",
+        "note": "Mapped by use (dark surfaces) and pixels: #FFFFFF lockup on a transparent background, the only light lockup in the bundle.",
+        "sha256": "5fc83a0ecd30c48c9e3823c9fdbdba34d601ef833292c5bcd9dba7f98c7a7869",
+        "url": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/assets/Runpod-logo-white-wordmark.png",
+        "use": "Black-on-dark surfaces. Optimized for low-light UI or dark themes."
+      }
+    ],
+    "note": "The same eight logo and icon files, with the same uses, are on the Notion page (Primary logo, Logo Symbol). Notion links a Drive file bundle; this repo links the Drive folder. Checksums and URLs come from assets/manifest.json, built from the Brand Assets shared drive bundles; the bundle file names differ from the Notion names.",
+    "source": "docs/logos.md; assets/manifest.json (Brand Assets shared drive bundles, sha256 per file)",
+    "status": "canonical"
+  },
+  "brand": {
+    "casing": "Runpod",
+    "incorrect_forms": [
+      "Run Pod",
+      "Run-Pod",
+      "RUNPOD"
+    ],
+    "name": "Runpod",
+    "outdated_names": [
+      "RunPod"
+    ],
+    "positioning": "AI Infrastructure Developers Trust",
+    "tagline": "AI Developer Cloud",
+    "website": "https://www.runpod.io"
+  },
+  "color": {
+    "color.accent.ambient-pink": {
+      "name": "Ambient Pink",
+      "note": "On the Notion page as Ambient Pink (Accent colors). Also the brand design lead in writing, 2026-09-22. Printed nowhere in the Brand Guidelines V.2 PDF.",
+      "role": "Depth, gradients, highlights. Printed nowhere in the PDF.",
+      "source": "the brand design lead, in writing to marketing, 2026-09-22 16:33 MDT",
+      "status": "canonical",
+      "tier": "accent",
+      "value": "#D58EFF"
+    },
+    "color.accent.electric-purple": {
+      "name": "Electric Purple",
+      "note": "On the Notion page as Electric Purple (Accent colors). Also Brand Guidelines V.2, page 21.",
+      "role": "Accent. Notion Brand Guidelines, Accent colors; also Brand Guidelines V.2 p.21",
+      "source": "Notion Brand Guidelines page (the brand design lead, last edited 2026-09-25), Accent colors; Brand Guidelines V.2, July 2026, page 21",
+      "status": "canonical",
+      "tier": "accent",
+      "value": "#874BFF"
+    },
+    "color.accent.radiant-pink": {
+      "name": "Radiant Pink",
+      "note": "On the Notion page as Radiant Pink (Accent colors). Also the brand design lead in writing, 2026-09-22.",
+      "role": "Depth, gradients, highlights.",
+      "source": "the brand design lead, in writing to marketing, 2026-09-22 16:33 MDT",
+      "status": "canonical",
+      "tier": "accent",
+      "value": "#AE6DFF"
+    },
+    "color.brand.midnight": {
+      "name": "Primary black",
+      "note": "On the Notion page as Runpod Black (Core colors). Also the brand design lead in writing, 2026-09-22.",
+      "role": "Updated from #06040D, which appears in no brand document. Richer black for print.",
+      "source": "the brand design lead, in writing to marketing, 2026-09-22 16:37 MDT",
+      "status": "canonical",
+      "tier": "brand",
+      "value": "#000010"
+    },
+    "color.brand.purple": {
+      "name": "Runpod Purple",
+      "note": "On the Notion page as Runpod Purple (Core colors). Also Brand Guidelines V.2 and the brand design lead in writing, 2026-09-22.",
+      "role": "Primary brand signal.",
+      "source": "Brand Guidelines V.2; named the core purple in writing 2026-09-22 16:23 MDT, uncorrected",
+      "status": "canonical",
+      "tier": "brand",
+      "value": "#5D29F0"
+    },
+    "color.brand.purple-200": {
+      "name": "Purple 200",
+      "note": "On the Notion page as Purple 200 (Core colors). Also Brand Guidelines V.2, page 20.",
+      "role": "High-contrast content on dark backgrounds. The dark-mode accent.",
+      "source": "Brand Guidelines V.2, July 2026, page 20",
+      "status": "canonical",
+      "tier": "brand",
+      "value": "#9289FE"
+    },
+    "color.brand.purple-950": {
+      "name": "Purple 950",
+      "note": "On the Notion page as Purple 950 (Core colors). Also Brand Guidelines V.2, page 20.",
+      "role": "First level of elevation above the primary black.",
+      "source": "Brand Guidelines V.2, July 2026, page 20; confirmed the brand design lead, in writing to marketing, 2026-09-22 16:37 MDT",
+      "status": "canonical",
+      "tier": "brand",
+      "value": "#100433"
+    },
+    "color.brand.purple-light": {
+      "name": "Light accent purple",
+      "note": "Duplicate of color.accent.radiant-pink under a role name that caused the dark-accent confusion. Use color.accent.radiant-pink on light surfaces and color.brand.purple-200 on dark surfaces.",
+      "role": "Radiant Pink. Supporting highlight on light surfaces. NOT the dark-surface accent: use purple-200 on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-09-22 16:33 MDT",
+      "status": "deprecated",
+      "tier": "brand",
+      "value": "#AE6DFF"
+    },
+    "color.neutral.100": {
+      "name": "Neutral 100",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "neutral",
+      "value": "#DFDFE1"
+    },
+    "color.neutral.200": {
+      "name": "Neutral 200",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "neutral",
+      "value": "#BFBFC3"
+    },
+    "color.neutral.300": {
+      "name": "Neutral 300",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "neutral",
+      "value": "#AAAAAF"
+    },
+    "color.neutral.400": {
+      "name": "Neutral 400",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "neutral",
+      "value": "#95959B"
+    },
+    "color.neutral.50": {
+      "name": "Neutral 50",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "neutral",
+      "value": "#F4F4F5"
+    },
+    "color.neutral.500": {
+      "name": "Neutral 500",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "neutral",
+      "value": "#808087"
+    },
+    "color.neutral.600": {
+      "name": "Neutral 600",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "neutral",
+      "value": "#6A6A74"
+    },
+    "color.neutral.700": {
+      "name": "Neutral 700",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "neutral",
+      "value": "#555560"
+    },
+    "color.neutral.800": {
+      "name": "Neutral 800",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "neutral",
+      "value": "#40404C"
+    },
+    "color.neutral.900": {
+      "name": "Neutral 900",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "neutral",
+      "value": "#2B2B38"
+    },
+    "color.neutral.950": {
+      "name": "Neutral 950",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds. The first grey above Runpod Black #000010 (color.brand.midnight).",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "neutral",
+      "value": "#151524"
+    },
+    "color.neutral.black": {
+      "name": "Black",
+      "note": "Not on the Notion page. The system has no pure black; color.brand.midnight (Runpod Black, #000010) is the dark base.",
+      "role": "text on light backgrounds, monochrome logo usage, print materials, neutral layouts",
+      "source": "tokens/tokens.json; no $source recorded",
+      "status": "deprecated",
+      "tier": "neutral",
+      "value": "#000000"
+    },
+    "color.neutral.white": {
+      "name": "White",
+      "note": "On the Notion page as Runpod White (Core colors). tokens.json carries no $source line for it.",
+      "role": "text on dark backgrounds, light layouts, inverse logo usage, spacing and clarity",
+      "source": "tokens/tokens.json; no $source recorded",
+      "status": "canonical",
+      "tier": "neutral",
+      "value": "#FFFFFF"
+    },
+    "color.purple.100": {
+      "name": "Purple 100",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "brand",
+      "value": "#B6B0FE"
+    },
+    "color.purple.200": {
+      "name": "Purple 200",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds. Same value as color.brand.purple-200.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "brand",
+      "value": "#9289FE"
+    },
+    "color.purple.300": {
+      "name": "Purple 300",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "brand",
+      "value": "#7B70F5"
+    },
+    "color.purple.400": {
+      "name": "Purple 400",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "brand",
+      "value": "#684DF3"
+    },
+    "color.purple.50": {
+      "name": "Purple 50",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "brand",
+      "value": "#DBD8FF"
+    },
+    "color.purple.500": {
+      "name": "Purple 500",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds. Same value as color.brand.purple (Runpod Purple).",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "brand",
+      "value": "#5D29F0"
+    },
+    "color.purple.600": {
+      "name": "Purple 600",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "brand",
+      "value": "#4A23CA"
+    },
+    "color.purple.700": {
+      "name": "Purple 700",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "brand",
+      "value": "#381DA4"
+    },
+    "color.purple.800": {
+      "name": "Purple 800",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "brand",
+      "value": "#28177F"
+    },
+    "color.purple.900": {
+      "name": "Purple 900",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "brand",
+      "value": "#1B0656"
+    },
+    "color.purple.950": {
+      "name": "Purple 950",
+      "note": "the brand design lead in writing 2026-10-13; not yet on the Notion page, the brand design lead to add this week.",
+      "role": "Extended Core Colors ramp: dark surfaces, graphic elements, high-contrast content on dark backgrounds. Same value as color.brand.purple-950.",
+      "source": "the brand design lead, in writing to marketing, 2026-10-13 10:58 MDT, Extended Core Colors slide",
+      "status": "provisional",
+      "tier": "brand",
+      "value": "#100433"
+    },
+    "color.utility.data": {
+      "name": "Data",
+      "note": "Brand Guidelines V.2 p.22; not on the Notion page.",
+      "role": "Product states, diagrams, data visualization.",
+      "source": "Brand Guidelines V.2, July 2026, page 22",
+      "status": "provisional",
+      "tier": "utility",
+      "value": "#A7FF43"
+    },
+    "color.utility.error": {
+      "name": "Error",
+      "note": "Brand Guidelines V.2 p.22; not on the Notion page.",
+      "role": "Product states, diagrams, data visualization.",
+      "source": "Brand Guidelines V.2, July 2026, page 22",
+      "status": "provisional",
+      "tier": "utility",
+      "value": "#FF661A"
+    },
+    "color.utility.information": {
+      "name": "Information",
+      "note": "Brand Guidelines V.2 p.22; not on the Notion page.",
+      "role": "Product states, diagrams, data visualization.",
+      "source": "Brand Guidelines V.2, July 2026, page 22",
+      "status": "provisional",
+      "tier": "utility",
+      "value": "#43FFE3"
+    },
+    "color.utility.success": {
+      "name": "Success",
+      "note": "Brand Guidelines V.2 p.22; not on the Notion page.",
+      "role": "Product states, diagrams, data visualization.",
+      "source": "Brand Guidelines V.2, July 2026, page 22",
+      "status": "provisional",
+      "tier": "utility",
+      "value": "#41F420"
+    },
+    "color.utility.warning": {
+      "name": "Warning",
+      "note": "Brand Guidelines V.2 p.22; not on the Notion page.",
+      "role": "Product states, diagrams, data visualization.",
+      "source": "Brand Guidelines V.2, July 2026, page 22",
+      "status": "provisional",
+      "tier": "utility",
+      "value": "#FFC01F"
+    },
+    "gradient.anchor.glow": {
+      "name": "Highlight Glow",
+      "note": "On the Notion page as Pink Glow (Accent colors), the brightest point in gradients. Also Brand Guidelines V.2, page 21. Naming disagreement: docs/gradient.md calls this anchor Highlight Glow, while the Notion Gradient section names its third anchor Runpod Highlight Glow #9289FE, which is Purple 200. the brand design lead to reconcile.",
+      "role": "Pink Glow. Brightest point of the brand gradient. Notion Brand Guidelines, Accent colors; also Brand Guidelines V.2 p.21.",
+      "source": "Notion Brand Guidelines page (the brand design lead, last edited 2026-09-25), Accent colors; Brand Guidelines V.2, July 2026, page 21",
+      "status": "canonical",
+      "tier": "gradient",
+      "value": "#FCB1FF"
+    },
+    "gradient.anchor.midnight": {
+      "name": "Deep Midnight",
+      "note": "On the Notion page as a gradient anchor (Runpod Purple 950). Same value as color.brand.purple-950.",
+      "role": "Gradient-only midnight anchor. Same value as color.brand.purple-950, which is the tier Brand Guidelines V.2 files it under.",
+      "source": "tokens/tokens.json; no $source recorded",
+      "status": "canonical",
+      "tier": "gradient",
+      "value": "#100433"
+    },
+    "gradient.anchor.purple": {
+      "name": "Runpod Purple",
+      "note": "On the Notion page as a gradient anchor (Runpod Purple). Same value as color.brand.purple.",
+      "source": "tokens/tokens.json; no $source recorded",
+      "status": "canonical",
+      "tier": "gradient",
+      "value": "#5D29F0"
+    }
+  },
+  "distribution": {
+    "note": "Mirror of the private runpod/brand brand.json with attribution strings reduced to roles. Values, statuses and sources are otherwise identical.",
+    "published_at": "2026-10-29T19:16:49Z",
+    "redactions": 164,
+    "source_sha256": "c737cea0e166c6caa753637ef6d4b0bd0bfec34caf37bfe32bbc84ca89f78046",
+    "variant": "public"
+  },
+  "endpoints": {
+    "note": "public is the URL of record. raw requires GitHub authentication while runpod/brand is private. well_known is served from www.runpod.io (200 as of 2026-10-29) and mirrors the public document.",
+    "public": "https://runpod-brand-json.s3.us-east-1.amazonaws.com/brand.json",
+    "raw": "https://raw.githubusercontent.com/runpod/brand/main/brand.json",
+    "well_known": "https://www.runpod.io/.well-known/brand.json"
+  },
+  "gaps": [
+    "Grid: columns, gutters and breakpoints. The spacing scale, radii, web type scale and primary button are in brand.json layout, measured from the live site and provisional until the brand design lead ratifies them on Notion",
+    "Elevation and shadow tokens",
+    "Component specs beyond the primary button (forms, cards, inputs)",
+    "Motion and animation guidelines",
+    "Photography and illustration direction",
+    "Minimum logo size",
+    "Asset file names: the Brand Assets bundle file names differ from the Notion and docs/logos.md names (Runpod-logo-purple-black.png on Notion is Runpod-logo-purple-black-wordmark.png in the bundle), and no bundle file matches Runpod-logo-purple.png or purple-white-icon.png; the brand design lead to reconcile",
+    "Weight set: the Notion page names Bold or Black for headlines and Light for metadata, Brand Guidelines V.2 p.27 lists Regular and Medium only; the brand design lead to reconcile"
+  ],
+  "generated_at": "2026-10-29T18:57:02Z",
+  "generated_from": {
+    "commit": "2dbb24ac25fb83f01e4604cacd9f0f14a157df7e",
+    "inputs": [
+      "tokens/tokens.json",
+      "tokens/status.json",
+      "docs/voice-and-tone.md",
+      "docs/style-rules.md",
+      "docs/typography.md",
+      "docs/logos.md",
+      "docs/iconography.md",
+      "docs/gradient.md",
+      "docs/color.md",
+      "README.md",
+      "docs/surfaces.md",
+      "docs/accessibility.md",
+      "docs/clear-space.md",
+      "assets/manifest.json"
+    ],
+    "repo": "runpod/brand"
+  },
+  "icon": {
+    "default_size": "24px",
+    "library": "lucide",
+    "note": "On the Notion page (Iconography): Lucide, 2px stroke, 24px default size.",
+    "source": "tokens/tokens.json; docs/iconography.md",
+    "status": "canonical",
+    "stroke_width": "2px"
+  },
+  "layout": {
+    "button": {
+      "height_px": 62,
+      "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+      "padding_x_px": 24,
+      "radius": 1600,
+      "source": "height: measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); computed for .button, which sets height:100% of its wrapper: 20px font-size x 1.5 line-height + 2 x 16px padding (padding 1rem 1.5rem); 6 declarations of 16px padding on button selectors | padding-x: measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); .button padding 1rem 1.5rem; 4 declarations of 24px padding on button selectors | radius: measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); .button border-radius var(--_sizing---radius--round) = 100rem; 4 declarations of 1600px border-radius on button selectors",
+      "status": "provisional"
+    },
+    "note": "ratify on Notion (the brand design lead)",
+    "radius": {
+      "lg": {
+        "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+        "px": 24,
+        "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); 44 declarations of 24px in desktop border-radius, the most frequent radius under 100px",
+        "status": "provisional"
+      },
+      "md": {
+        "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+        "px": 16,
+        "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); 18 declarations of 16px in desktop border-radius, the third most frequent radius under 100px",
+        "status": "provisional"
+      },
+      "pill": {
+        "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+        "px": 1600,
+        "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); 100rem (--_sizing---radius--round), the most frequent fully round value; 71 declarations are 100px or more, 51 of them 1600px",
+        "status": "provisional"
+      },
+      "sm": {
+        "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+        "px": 12,
+        "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); 31 declarations of 12px in desktop border-radius, the second most frequent radius under 100px",
+        "status": "provisional"
+      }
+    },
+    "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css)",
+    "space": {
+      "1": {
+        "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+        "px": 8,
+        "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); 123 lengths of 8px in desktop margin, padding and gap declarations, on the 4px grid",
+        "status": "provisional"
+      },
+      "2": {
+        "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+        "px": 12,
+        "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); 88 lengths of 12px in desktop margin, padding and gap declarations, on the 4px grid",
+        "status": "provisional"
+      },
+      "3": {
+        "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+        "px": 16,
+        "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); 185 lengths of 16px in desktop margin, padding and gap declarations, on the 4px grid",
+        "status": "provisional"
+      },
+      "4": {
+        "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+        "px": 20,
+        "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); 69 lengths of 20px in desktop margin, padding and gap declarations, on the 4px grid",
+        "status": "provisional"
+      },
+      "5": {
+        "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+        "px": 24,
+        "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); 137 lengths of 24px in desktop margin, padding and gap declarations, on the 4px grid",
+        "status": "provisional"
+      },
+      "6": {
+        "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+        "px": 32,
+        "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); 194 lengths of 32px in desktop margin, padding and gap declarations, on the 4px grid",
+        "status": "provisional"
+      },
+      "7": {
+        "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+        "px": 40,
+        "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); 79 lengths of 40px in desktop margin, padding and gap declarations, on the 4px grid",
+        "status": "provisional"
+      },
+      "8": {
+        "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+        "px": 48,
+        "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); 80 lengths of 48px in desktop margin, padding and gap declarations, on the 4px grid",
+        "status": "provisional"
+      }
+    },
+    "status": "provisional",
+    "type": {
+      "scale": {
+        "web": {
+          "body": {
+            "line_height": 1.5,
+            "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+            "size_px": 16,
+            "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); body at desktop, 32 rules at desktop set font-size 16px",
+            "status": "provisional"
+          },
+          "display": {
+            "line_height": 1.1,
+            "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+            "size_px": 64,
+            "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); .hero_h1 at desktop, 2 rules at desktop set font-size 64px",
+            "status": "provisional"
+          },
+          "h1": {
+            "line_height": 1.2,
+            "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+            "size_px": 56,
+            "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); .heading-style-h1 at desktop, 4 rules at desktop set font-size 56px",
+            "status": "provisional"
+          },
+          "h2": {
+            "line_height": 1.2,
+            "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+            "size_px": 48,
+            "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); .heading-style-h2 at desktop, 11 rules at desktop set font-size 48px",
+            "status": "provisional"
+          },
+          "h3": {
+            "line_height": 1.2,
+            "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+            "size_px": 30,
+            "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); .heading-style-h3 at desktop, 12 rules at desktop set font-size 30px",
+            "status": "provisional"
+          },
+          "small": {
+            "line_height": 1.5,
+            "note": "Measured from the runpod.io capture 2026-09-22; not on the Notion page. Ratify on Notion (the brand design lead).",
+            "size_px": 14,
+            "source": "measured from runpod.io capture 2026-09-22 (brand-design-agent captures/raw/2026-09-22-runpod-io.css); --_sizing---text--small at desktop (sets no line-height; text inherits body's 1.5), 28 rules at desktop set font-size 14px",
+            "status": "provisional"
+          }
+        }
+      }
+    }
+  },
+  "style": {
+    "casing": "sentence",
+    "em_dashes": false,
+    "generic_lowercase": [
+      "endpoint",
+      "worker",
+      "cluster",
+      "template",
+      "handler",
+      "network volume"
+    ],
+    "name_forms": [
+      {
+        "correct": true,
+        "form": "Runpod",
+        "note": "Correct, current name"
+      },
+      {
+        "correct": true,
+        "form": "runpod",
+        "note": "Acceptable in URLs, code, and lowercase contexts"
+      },
+      {
+        "correct": false,
+        "form": "RunPod",
+        "note": "Outdated, no longer correct as of June 2025"
+      },
+      {
+        "correct": false,
+        "form": "Run Pod",
+        "note": "Incorrect, we are one word"
+      },
+      {
+        "correct": false,
+        "form": "Run-Pod",
+        "note": "Incorrect, no hyphen"
+      },
+      {
+        "correct": false,
+        "form": "RUNPOD",
+        "note": "Incorrect, we are not yelling"
+      },
+      {
+        "correct": false,
+        "form": "rUnPoD",
+        "note": "You wouldn't, but just in case"
+      }
+    ],
+    "note": "Three of the four rules and the name-forms list match the Notion page (Style rules). One disagreement: Notion's proper-noun list says Instant Clusters where this repo says Clusters; the repo value is kept pending the brand design lead. Separately, the Notion Logo + Tagline Lockup section fixes the lockup text as The AI Developer Cloud, while brand.tagline reads AI Developer Cloud.",
+    "proper_nouns": [
+      "Runpod",
+      "Pod",
+      "Pods",
+      "Serverless",
+      "Hub",
+      "Clusters",
+      "Secure Cloud",
+      "Community Cloud",
+      "Tetra",
+      "Flash"
+    ],
+    "source": "docs/style-rules.md",
+    "status": "provisional"
+  },
+  "surfaces": {
+    "blog_header": {
+      "height": 840,
+      "max_bytes": null,
+      "note": "House standard, ratify on Notion. No platform spec.",
+      "safe_area": {
+        "bottom": 44,
+        "left": 80,
+        "right": 80,
+        "top": 44
+      },
+      "source": "docs/surfaces.md",
+      "status": "provisional",
+      "use": "Header image on a runpod.io blog post.",
+      "width": 1600
+    },
+    "email_header": {
+      "height": 200,
+      "max_bytes": null,
+      "note": "House standard, ratify on Notion. No platform spec.",
+      "safe_area": {
+        "bottom": 12,
+        "left": 32,
+        "right": 32,
+        "top": 12
+      },
+      "source": "docs/surfaces.md",
+      "status": "provisional",
+      "use": "Header band in a marketing email.",
+      "width": 600
+    },
+    "instagram_square": {
+      "height": 1080,
+      "max_bytes": null,
+      "note": "Instagram states photos upload at up to 1080 px wide and keep their resolution between 1.91:1 and 3:4; 1:1 is in that range. No file-size cap stated.",
+      "safe_area": {
+        "bottom": 56,
+        "left": 56,
+        "right": 56,
+        "source": "docs/surfaces.md house rule (5% per side, rounded to 4px)",
+        "status": "provisional",
+        "top": 56
+      },
+      "source": "https://help.instagram.com/1631821640426723",
+      "status": "canonical",
+      "use": "Square Instagram feed post.",
+      "width": 1080
+    },
+    "linkedin_carousel": {
+      "height": 1350,
+      "max_bytes": 10000000,
+      "note": "LinkedIn's carousel ad page states 1080 x 1080 (1:1), up to 4320 x 4320, 10 MB per card; 1080 x 1350 (4:5) is not on it. Ratify on Notion or move to 1080 x 1080.",
+      "safe_area": {
+        "bottom": 68,
+        "left": 56,
+        "right": 56,
+        "top": 68
+      },
+      "source": "https://www.linkedin.com/help/lms/answer/88137",
+      "status": "provisional",
+      "use": "One card of a LinkedIn carousel or document post, portrait.",
+      "width": 1080
+    },
+    "linkedin_post": {
+      "height": 627,
+      "max_bytes": 3000000,
+      "note": "LinkedIn states 1.91:1 (1200 x 627) for custom images on Page posts with a URL, and a 3 MB cap for Page images.",
+      "safe_area": {
+        "bottom": 32,
+        "left": 60,
+        "right": 60,
+        "source": "docs/surfaces.md house rule (5% per side, rounded to 4px)",
+        "status": "provisional",
+        "top": 32
+      },
+      "source": "https://www.linkedin.com/help/lms/answer/a563309",
+      "status": "canonical",
+      "use": "Single-image LinkedIn post or link image.",
+      "width": 1200
+    },
+    "note": "width, height and max_bytes come from the source on each row, and each row carries its own status. safe_area on every row is the house rule in docs/surfaces.md (5% of each dimension, rounded half up to 4px), provisional until ratified on Notion (the brand design lead).",
+    "og": {
+      "height": 630,
+      "max_bytes": 8000000,
+      "note": "Meta states at least 1200 x 630 and an 8 MB cap (8000000 bytes, decimal, the conservative reading).",
+      "safe_area": {
+        "bottom": 32,
+        "left": 60,
+        "right": 60,
+        "source": "docs/surfaces.md house rule (5% per side, rounded to 4px)",
+        "status": "provisional",
+        "top": 32
+      },
+      "source": "https://developers.facebook.com/docs/sharing/webmasters/images/",
+      "status": "canonical",
+      "use": "Open Graph link previews (og:image) for every page and launch URL.",
+      "width": 1200
+    },
+    "slide": {
+      "height": 1080,
+      "max_bytes": null,
+      "note": "House standard, ratify on Notion. No platform spec.",
+      "safe_area": {
+        "bottom": 56,
+        "left": 96,
+        "right": 96,
+        "top": 56
+      },
+      "source": "docs/surfaces.md",
+      "status": "provisional",
+      "use": "One 16:9 slide in a deck.",
+      "width": 1920
+    },
+    "source": "docs/surfaces.md",
+    "status": "provisional",
+    "x_card": {
+      "height": 900,
+      "max_bytes": null,
+      "note": "Not verified 2026-10-29: X's help and developer pages refused the fetch (403, 402). The summary_large_image card is documented as 2:1, and a 2:1 crop of 1600 x 900 removes 50 px top and bottom. Verify by hand before ratifying.",
+      "safe_area": {
+        "bottom": 44,
+        "left": 80,
+        "right": 80,
+        "top": 44
+      },
+      "source": "https://developer.x.com/en/docs/x-for-websites/cards/overview/summary-card-with-large-image",
+      "status": "provisional",
+      "use": "Image for an X post or link card.",
+      "width": 1600
+    },
+    "youtube_thumbnail": {
+      "height": 720,
+      "max_bytes": 2000000,
+      "note": "YouTube now recommends 3840 x 2160 with a 640 px minimum width; 1280 x 720 clears the minimum but is not the stated recommendation. 2 MB is the mobile upload cap (desktop allows 50 MB). Ratify on Notion.",
+      "safe_area": {
+        "bottom": 36,
+        "left": 64,
+        "right": 64,
+        "top": 36
+      },
+      "source": "https://support.google.com/youtube/answer/72431",
+      "status": "provisional",
+      "use": "YouTube video thumbnail.",
+      "width": 1280
+    }
+  },
+  "typography": {
+    "families": {
+      "code": {
+        "license": "Open source (SIL Open Font License)",
+        "name": "JetBrains Mono",
+        "note": "Brand Guidelines V.2 p.29; not on the Notion page.",
+        "role": "Code",
+        "source": "Brand Guidelines V.2, July 2026, page 29",
+        "status": "provisional"
+      },
+      "developer": {
+        "license": "Open source (SIL Open Font License)",
+        "name": "Departure Mono",
+        "note": "Brand Guidelines V.2 p.28; not on the Notion page.",
+        "role": "Developer-culture copy",
+        "source": "Brand Guidelines V.2, July 2026, page 28",
+        "status": "provisional"
+      },
+      "fallback": {
+        "name": "Inter",
+        "note": "On the Notion page as Inter (Primary fallback) with the stack Inter, Helvetica, Arial, sans-serif. Not in Brand Guidelines V.2, which names no fallback for any typeface.",
+        "role": "Repo-defined open-source substitute when ABC Diatype cannot be used. Not in Brand Guidelines V.2, which names no fallback for any typeface",
+        "source": "docs/typography.md; not in Brand Guidelines V.2",
+        "stack": [
+          "Inter",
+          "Helvetica",
+          "Arial",
+          "sans-serif"
+        ],
+        "status": "canonical"
+      },
+      "primary": {
+        "license": "Commercial (Dinamo). Company license purchased 2026-02-11 covering desktop and print, web, social media, and video",
+        "name": "ABC Diatype",
+        "note": "On the Notion page as Diatype (Primary Typeface). Brand Guidelines V.2 page 26 names it ABC Diatype; same typeface.",
+        "role": "Headlines, UI text, marketing materials, presentations, website typography, internal decks",
+        "source": "Brand Guidelines V.2, July 2026, page 26",
+        "status": "canonical"
+      }
+    },
+    "rules": [
+      "Use weight for hierarchy, not multiple typefaces: Bold or Black for headlines, Medium for subheads, Regular for body copy, Light for secondary metadata (Notion); Brand Guidelines V.2 p.27 lists Regular and Medium only.",
+      "No stretched text.",
+      "No fake bold or italic.",
+      "No excessive tracking.",
+      "No drop shadows or outlines.",
+      "Maintain breathing room: generous line height and margin create clarity and authority.",
+      "Typography should feel engineered, not stylized."
+    ],
+    "weights": {
+      "black": {
+        "note": "Named on the Notion page as words (Bold or Black for headlines); Brand Guidelines V.2 p.27 lists Regular and Medium only; the brand design lead to reconcile.",
+        "source": "tokens.json; not in Brand Guidelines V.2, page 27",
+        "status": "provisional",
+        "value": 900
+      },
+      "bold": {
+        "note": "Named on the Notion page as words (Bold or Black for headlines); Brand Guidelines V.2 p.27 lists Regular and Medium only; the brand design lead to reconcile.",
+        "source": "tokens.json; not in Brand Guidelines V.2, page 27",
+        "status": "provisional",
+        "value": 700
+      },
+      "light": {
+        "note": "Named on the Notion page as words (Light for secondary metadata); Brand Guidelines V.2 p.27 lists Regular and Medium only; the brand design lead to reconcile.",
+        "source": "tokens.json; not in Brand Guidelines V.2, page 27",
+        "status": "provisional",
+        "value": 300
+      },
+      "medium": {
+        "note": "On the Notion page as Medium for subheads (named as a word, no numeric). Also Brand Guidelines V.2, page 27.",
+        "source": "Brand Guidelines V.2, July 2026, page 27",
+        "status": "canonical",
+        "value": 500
+      },
+      "regular": {
+        "note": "On the Notion page as Regular for body copy (named as a word, no numeric). Also Brand Guidelines V.2, page 27.",
+        "source": "Brand Guidelines V.2, July 2026, page 27",
+        "status": "canonical",
+        "value": 400
+      }
+    }
+  },
+  "version": "1.1.0",
+  "voice": {
+    "avoid": [
+      {
+        "name": "Marketing speak",
+        "text": "Terms like \"revolutionary,\" \"game-changing,\" and \"best-in-class\" are vague. Describe what the product actually does."
+      },
+      {
+        "name": "Corporate language",
+        "text": "We don't \"leverage synergies\" or \"drive value.\" We build tools that work."
+      },
+      {
+        "name": "Overpromising",
+        "text": "If something is in beta, say so. If there are limitations, mention them. Accuracy builds more credibility than enthusiasm."
+      },
+      {
+        "name": "Condescension",
+        "text": "Assume the reader is capable but may be learning this specific topic."
+      }
+    ],
+    "note": "Same text as the Notion page (Voice and tone): summary, four principles, four things to avoid, and the five-row quick reference. Only the punctuation of the summary differs.",
+    "principles": [
+      {
+        "name": "Direct",
+        "text": "Say what we mean concisely. If something is complex, acknowledge it. If it's simple, say so."
+      },
+      {
+        "name": "Technical but accessible",
+        "text": "We respect our audience's intelligence. Use technical terms when appropriate, but explain when context helps."
+      },
+      {
+        "name": "Useful",
+        "text": "Every piece of content should leave the reader better informed or more capable."
+      },
+      {
+        "name": "Confident without arrogance",
+        "text": "We know our strengths. We also acknowledge what we're still improving."
+      }
+    ],
+    "source": "docs/voice-and-tone.md",
+    "status": "canonical",
+    "summary": "We sound like a senior engineer explaining something to a peer. Technical, direct, helpful. Never condescending, never vague, never filled with buzzwords.",
+    "swaps": [
+      {
+        "instead_of": "Leverage our cutting-edge infrastructure",
+        "write": "Deploy on GPUs across 30+ regions"
+      },
+      {
+        "instead_of": "Revolutionary AI platform",
+        "write": "AI infrastructure that scales with you"
+      },
+      {
+        "instead_of": "We're excited to announce...",
+        "write": "[Feature] is now available."
+      },
+      {
+        "instead_of": "Seamlessly integrate with your workflow",
+        "write": "Works with your existing tools"
+      },
+      {
+        "instead_of": "Unlock the full potential of...",
+        "write": "[Describe the specific capability]"
+      }
+    ]
+  }
+}

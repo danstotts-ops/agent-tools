@@ -108,3 +108,18 @@ The pattern is identical: lift the existing `*_tools.py` from whichever agent or
 ## Status
 
 **Phase 1 (in progress).** Foundation + slack/snowflake/notion/drive servers. fpa-agent will be the first agent migrated onto this package as proof-of-pattern; the rest follow in their own PRs.
+
+## Brand tokens (`agent_tools.brand`)
+
+Runpod's colours, typefaces, weights and dark/light themes, read from the public brand.json instead of hard-coded hex codes. Same loader and rules as the marketing plugin's runpod-decks skill.
+
+```python
+from agent_tools import brand
+brand.BRAND["purple"]        # "#5D29F0", Runpod Purple
+brand.BRAND["midnight"]      # "#000010", Runpod Black (there is no #000000)
+brand.THEMES["dark"]["bg"]   # slide/page background for dark surfaces
+brand.TYPEFACE               # primary family
+brand.source_used()          # "s3", "github", "env" or "snapshot"
+```
+
+Resolution, first that loads wins: `BRAND_JSON_PATH` (local file), https://runpod-brand-json.s3.us-east-1.amazonaws.com/brand.json, the private raw GitHub URL when `GITHUB_TOKEN` is set, then the bundled `brand.snapshot.json`. Network reads are cached 24 hours; `BRAND_JSON_OFFLINE=1` skips the network (tests should set it). Deprecated colours are never loaded. Refresh the snapshot from the S3 URL when the canon changes.

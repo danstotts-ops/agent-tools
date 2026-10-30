@@ -32,3 +32,6 @@ dev = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["agent_tools*"]
+
+[tool.setuptools.package-data]
+agent_tools = ["brand.snapshot.json"]
