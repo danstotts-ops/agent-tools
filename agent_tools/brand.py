@@ -11,7 +11,7 @@ with the same rules. Import it, never copy hex codes:
 
 The offline snapshot is the public variant published to S3 by
 brand-design-agent's scripts/publish_brand_json.py. Refresh it from
-https://runpod-brand-json.s3.us-east-1.amazonaws.com/brand.json when the
+https://brand.runpod.io/brand.json when the
 canon changes; tests/test_brand.py fails if it stops matching what this module
 renders.
 
@@ -40,27 +40,30 @@ here that is not a brand value is PORTABLE_FALLBACK: see its comment.
 Resolution order, first source that loads and validates wins:
 
 1. `BRAND_JSON_PATH`, a local file. For pointing at a branch of the brand repo.
-2. https://runpod-brand-json.s3.us-east-1.amazonaws.com/brand.json, the public
-   URL of record since 2026-10-29: the public variant of brand.json, published
-   from the private repo with attribution strings reduced to roles. Values and
-   statuses are identical to the private file.
-3. https://raw.githubusercontent.com/runpod/brand/main/brand.json. The repo is
+2. https://brand.runpod.io/brand.json, the public URL of record: the public
+   variant of brand.json, published from the private repo with attribution
+   strings reduced to roles. Values and statuses are identical to the private
+   file. CloudFront in front of the S3 bucket below, byte-identical.
+3. https://runpod-brand-json.s3.us-east-1.amazonaws.com/brand.json, the same
+   file straight from the bucket (the URL of record from 2026-10-29 to
+   2026-11-19), kept as the next fallback.
+4. https://raw.githubusercontent.com/runpod/brand/main/brand.json. The repo is
    private, so this answers only with a credential: it is sent an
    `Authorization: Bearer` header when `GITHUB_TOKEN` is set and nothing
    otherwise (an anonymous request gets a 404). The token goes to this host
-   only, never to the S3 URL.
-4. `brand.snapshot.json`, committed beside this file. Always present, so a deck
+   only, never to the public URLs.
+5. `brand.snapshot.json`, committed beside this file. Always present, so a deck
    builds on a plane.
 
-Steps 2 and 3 use urllib and are cached on disk for 24 hours under the user
+Steps 2 to 4 use urllib and are cached on disk for 24 hours under the user
 cache directory (`runpod-brand`), one cache file per URL. Any network, HTTP or
 parse failure is swallowed and the next URL is tried; once every URL has
-failed, a stale cache (S3 first, then raw) beats the snapshot. Set
+failed, a stale cache (brand.runpod.io first, then S3, then raw) beats the snapshot. Set
 `BRAND_JSON_OFFLINE=1` to skip the network entirely (tests do). Requests carry
 the User-Agent `runpod-brand-tokens/<plugin version>`.
 
 `BRAND_SOURCE` says which one won: "env:<path>", "url:<url>", "cache:<url>" or
-"snapshot". `source_used()` folds that to one of "env", "s3", "github" or
+"snapshot". `source_used()` folds that to one of "env", "brand", "s3", "github" or
 "snapshot".
 The snapshot is a copy of the S3 brand.json at a point in time. Refresh it from
 there when the upstream file changes; `tests/test_brand_tokens.py` fails
@@ -114,6 +117,7 @@ def _plugin_version():
 
 USER_AGENT = "runpod-agent-tools-brand/" + _plugin_version()
 
+BRAND_URL = "https://brand.runpod.io/brand.json"
 PUBLIC_URL = "https://runpod-brand-json.s3.us-east-1.amazonaws.com/brand.json"
 BRAND_JSON_URL = "https://raw.githubusercontent.com/runpod/brand/main/brand.json"
 RAW_HOST = "raw.githubusercontent.com"
@@ -462,7 +466,7 @@ def _fresh_cache(url, now):
 def _from_urls(fetch, now, token):
     """Per URL, in order: a fresh cache, else a fetch. When every URL has
     failed, a stale cache in the same order. None if nothing worked."""
-    sources = ((PUBLIC_URL, None), (BRAND_JSON_URL, token))
+    sources = ((BRAND_URL, None), (PUBLIC_URL, None), (BRAND_JSON_URL, token))
     for url, url_token in sources:
         found = _fresh_cache(url, now)
         if found:
@@ -505,9 +509,10 @@ def resolve(env=None, fetch=_fetch, now=time.time):
         found = _from_urls(fetch, now, env.get("GITHUB_TOKEN") or None)
         if found:
             return found
-        log.warning("brand.json: every URL failed (%s, %s) and no cache is "
-                    "usable; falling back to the committed snapshot, which "
-                    "may be out of date", PUBLIC_URL, BRAND_JSON_URL)
+        log.warning("brand.json: every URL failed (%s, %s, %s) and no cache "
+                    "is usable; falling back to the committed snapshot, "
+                    "which may be out of date", BRAND_URL, PUBLIC_URL,
+                    BRAND_JSON_URL)
     return derive(_read_file(SNAPSHOT_PATH)), "snapshot"
 
 
@@ -550,12 +555,14 @@ travel with the file."""
 
 
 def source_used():
-    """Which source the constants above were loaded from: "env", "s3",
-    "github" or "snapshot"."""
+    """Which source the constants above were loaded from: "env", "brand"
+    (brand.runpod.io), "s3", "github" or "snapshot"."""
     kind, _, where = BRAND_SOURCE.partition(":")
     if kind == "env":
         return "env"
     if kind in ("url", "cache"):
+        if where == BRAND_URL:
+            return "brand"
         return "s3" if where == PUBLIC_URL else "github"
     return "snapshot"
 
