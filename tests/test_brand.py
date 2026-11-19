@@ -315,6 +315,7 @@ class TestThemeShape(unittest.TestCase):
                 self.assertIn(colors["accent"], canon_values)
 
 
+BRAND_DOMAIN_URL = "https://brand.runpod.io/brand.json"
 S3_URL = "https://runpod-brand-json.s3.us-east-1.amazonaws.com/brand.json"
 STEPS = ("50", "100", "200", "300", "400", "500", "600", "700", "800", "900",
          "950")
@@ -351,14 +352,15 @@ class TestLoaderV2(unittest.TestCase):
             return doc
         return calls, fetch
 
-    def test_s3_is_the_first_url_source_after_the_env_path(self):
+    def test_brand_domain_is_the_first_url_source_after_the_env_path(self):
+        self.assertEqual(bt.BRAND_URL, BRAND_DOMAIN_URL)
         self.assertEqual(bt.PUBLIC_URL, S3_URL)
-        # An unusable override: the S3 URL is the first thing fetched.
+        # An unusable override: brand.runpod.io is the first thing fetched.
         calls, fetch = self.recorder()
         with self.assertLogs("agent_tools.brand", level="WARNING"):
             _, source = bt.resolve(
                 env={"BRAND_JSON_PATH": "/nonexistent.json"}, fetch=fetch)
-        self.assertEqual(calls[0], S3_URL)
+        self.assertEqual(calls[0], BRAND_DOMAIN_URL)
         self.assertEqual(source, "snapshot")
 
     def test_a_usable_env_path_beats_every_url(self):
@@ -370,11 +372,11 @@ class TestLoaderV2(unittest.TestCase):
         self.assertEqual(source, "env:" + path)
         self.assertEqual(calls, [])
 
-    def test_raw_github_comes_after_s3_then_the_snapshot(self):
+    def test_s3_then_raw_github_follow_brand_domain_then_the_snapshot(self):
         calls, fetch = self.recorder()
         with self.assertLogs("agent_tools.brand", level="WARNING"):
             _, source = bt.resolve(env={}, fetch=fetch)
-        self.assertEqual(calls, [S3_URL, bt.BRAND_JSON_URL])
+        self.assertEqual(calls, [BRAND_DOMAIN_URL, S3_URL, bt.BRAND_JSON_URL])
         self.assertEqual(source, "snapshot")
 
     def test_well_known_url_is_not_a_source(self):
@@ -382,7 +384,7 @@ class TestLoaderV2(unittest.TestCase):
         calls, fetch = self.recorder()
         with self.assertLogs("agent_tools.brand", level="WARNING"):
             bt.resolve(env={"GITHUB_TOKEN": "t0k"}, fetch=fetch)
-        self.assertEqual(len(calls), 2)
+        self.assertEqual(len(calls), 3)
         for url in calls:
             self.assertNotIn("well-known", url)
         with open(bt.__file__, encoding="utf-8") as fh:
@@ -393,6 +395,7 @@ class TestLoaderV2(unittest.TestCase):
         with self.assertLogs("agent_tools.brand", level="WARNING") as logged:
             bt.resolve(env={}, fetch=fetch)
         text = "\n".join(logged.output)
+        self.assertIn(BRAND_DOMAIN_URL, text)
         self.assertIn(S3_URL, text)
         self.assertIn(bt.BRAND_JSON_URL, text)
         self.assertIn("snapshot", text)
@@ -431,10 +434,12 @@ class TestLoaderV2(unittest.TestCase):
         self.assertEqual(bt.source_used(), "snapshot")
         self.assertEqual(bt.BRAND["purple"], "#5D29F0")
 
-    def test_source_used_folds_the_source_to_four_names(self):
+    def test_source_used_folds_the_source_to_five_names(self):
         saved = bt.BRAND_SOURCE
         self.addCleanup(setattr, bt, "BRAND_SOURCE", saved)
         for source, want in (("env:/x/brand.json", "env"),
+                             ("url:" + BRAND_DOMAIN_URL, "brand"),
+                             ("cache:" + BRAND_DOMAIN_URL, "brand"),
                              ("url:" + S3_URL, "s3"),
                              ("cache:" + S3_URL, "s3"),
                              ("url:" + bt.BRAND_JSON_URL, "github"),
