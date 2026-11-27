@@ -24,11 +24,13 @@ from agent_tools.browser import (
     BrowserUnavailable,
     PageCapture,
     PageCheckError,
+    UnsafeURLError,
     computed_styles,
     console_error_text,
     context_options,
     goto,
     screenshot,
+    validate_url,
 )
 
 # --- unit -------------------------------------------------------------------
@@ -155,6 +157,99 @@ def test_page_requires_entered_browser():
             pass
 
 
+@pytest.mark.parametrize(
+    "url",
+    [
+        "file:///etc/passwd",
+        "data:text/html,<h1>x</h1>",
+        "chrome://settings",
+        "view-source:https://www.runpod.io/",
+        "about:blank",
+        "javascript:alert(1)",
+        "https:///nohost",
+    ],
+)
+def test_validate_url_rejects_non_http_schemes(url):
+    with pytest.raises(UnsafeURLError):
+        validate_url(url, allow_private_hosts=True)
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://127.0.0.1:8000/",
+        "http://localhost/",
+        "http://169.254.169.254/latest/meta-data/",
+        "http://10.0.0.5/",
+        "http://192.168.1.1/",
+        "http://[::1]/",
+        "http://[::ffff:127.0.0.1]/",
+    ],
+)
+def test_validate_url_rejects_private_hosts_by_default(url):
+    with pytest.raises(UnsafeURLError) as info:
+        validate_url(url)
+    assert isinstance(info.value, PageCheckError)
+    assert info.value.kind == "UnsafeURLError"
+    validate_url(url, allow_private_hosts=True)  # explicit opt-in for local targets
+
+
+def test_validate_url_checks_what_a_name_resolves_to(monkeypatch):
+    monkeypatch.setattr(
+        browser.socket, "getaddrinfo", lambda *a, **k: [(None, None, None, "", ("10.1.2.3", 0))]
+    )
+    with pytest.raises(UnsafeURLError):
+        validate_url("https://internal.example.test/")
+
+
+def test_validate_url_allows_public_hosts(monkeypatch):
+    validate_url("https://8.8.8.8/")
+    monkeypatch.setattr(
+        browser.socket, "getaddrinfo", lambda *a, **k: [(None, None, None, "", ("104.18.0.1", 0))]
+    )
+    validate_url("https://www.runpod.io/pricing")
+
+
+def test_unresolvable_host_is_left_to_navigation(monkeypatch):
+    def fail(*a, **k):
+        raise browser.socket.gaierror("nope")
+
+    monkeypatch.setattr(browser.socket, "getaddrinfo", fail)
+    validate_url("https://does-not-resolve.example/")
+
+
+class _RedirectingPage:
+    """Fake page whose navigation lands on a metadata IP."""
+
+    def __init__(self) -> None:
+        self.url = ""
+        self.closed = False
+
+    def on(self, *_):
+        pass
+
+    def goto(self, url, wait_until, timeout):
+        self.url = "http://169.254.169.254/latest/meta-data/"
+        return type("R", (), {"status": 200})()
+
+    def close(self):
+        self.closed = True
+
+
+def test_redirect_to_private_host_is_refused(monkeypatch):
+    monkeypatch.setattr(
+        browser.socket, "getaddrinfo", lambda *a, **k: [(None, None, None, "", ("104.18.0.1", 0))]
+    )
+    fake_page = _RedirectingPage()
+    b = Browser()
+    b._browser = type("B", (), {"new_page": lambda self, **k: fake_page})()
+    with pytest.raises(UnsafeURLError) as info:
+        with b.page("https://www.runpod.io/go", wait="load"):
+            raise AssertionError("caller must not see the redirected page")
+    assert "169.254.169.254" in str(info.value)
+    assert fake_page.closed
+
+
 def test_pinned_version_matches_extra():
     pyproject = (Path(browser.__file__).parents[1] / "pyproject.toml").read_text()
     assert f'"playwright=={PLAYWRIGHT_VERSION}"' in pyproject
@@ -223,7 +318,7 @@ def _closed_port() -> int:
 
 
 def test_page_collects_status_and_errors(chromium, site):
-    with chromium.page(f"{site}/ok", wait="load_settle", settle_ms=300) as (page, capture):
+    with chromium.page(f"{site}/ok", wait="load_settle", settle_ms=300, allow_private_hosts=True) as (page, capture):
         assert page.viewport_size == {"width": 390, "height": 844}
     assert capture.status == 200
     assert capture.final_url == f"{site}/ok"
@@ -233,7 +328,7 @@ def test_page_collects_status_and_errors(chromium, site):
 
 
 def test_server_error_is_a_status_not_an_exception(chromium, site):
-    with chromium.page(f"{site}/boom", wait="load") as (_, capture):
+    with chromium.page(f"{site}/boom", wait="load", allow_private_hosts=True) as (_, capture):
         pass
     assert capture.status == 500
 
@@ -241,7 +336,7 @@ def test_server_error_is_a_status_not_an_exception(chromium, site):
 def test_unreachable_url_raises_page_check_error(chromium):
     url = f"http://127.0.0.1:{_closed_port()}/"
     with pytest.raises(PageCheckError) as info:
-        with chromium.page(url, wait="load", timeout_ms=5000):
+        with chromium.page(url, wait="load", timeout_ms=5000, allow_private_hosts=True):
             pass
     assert info.value.url == url
     assert info.value.kind == "Error"
@@ -249,12 +344,12 @@ def test_unreachable_url_raises_page_check_error(chromium):
 
 def test_errors_inside_the_block_become_page_check_error(chromium, site):
     with pytest.raises(PageCheckError):
-        with chromium.page(f"{site}/ok", wait="load") as (page, _):
+        with chromium.page(f"{site}/ok", wait="load", allow_private_hosts=True) as (page, _):
             page.evaluate("() => { throw new Error('inspection failed') }")
 
 
 def test_computed_styles_and_screenshot(chromium, site, tmp_path):
-    with chromium.page(f"{site}/ok", profile="desktop", wait="load") as (page, _):
+    with chromium.page(f"{site}/ok", profile="desktop", wait="load", allow_private_hosts=True) as (page, _):
         assert page.viewport_size == {"width": 1440, "height": 900}
         styles = computed_styles(page, ["h1", "nav"], ["color", "font-size"])
         shot = screenshot(page, tmp_path / "nested" / "ok.png")
@@ -262,3 +357,8 @@ def test_computed_styles_and_screenshot(chromium, site, tmp_path):
     assert styles["nav"] == []
     assert shot.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
 
+
+def test_private_target_is_refused_before_navigation(chromium, site):
+    with pytest.raises(UnsafeURLError):
+        with chromium.page(f"{site}/ok"):
+            pass

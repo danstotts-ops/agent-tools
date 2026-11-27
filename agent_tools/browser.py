@@ -27,9 +27,12 @@ Usage::
 from __future__ import annotations
 
 import contextlib
+import ipaddress
+import socket
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterator, Literal, Sequence
+from urllib.parse import urlparse
 
 # The Playwright release this module is tested against. Consumers pin the same
 # version so the Chromium build matches across the fleet.
@@ -87,6 +90,65 @@ class PageCheckError(RuntimeError):
         super().__init__(message)
         self.url = url
         self.kind = kind
+
+
+class UnsafeURLError(PageCheckError):
+    """The URL is not plain http(s), or it points at a loopback, private,
+    link-local, or otherwise non-public address (cloud metadata, the Railway
+    private network, the host's own services)."""
+
+
+ALLOWED_SCHEMES = frozenset({"http", "https"})
+
+
+def _is_public_ip(address: str) -> bool:
+    ip = ipaddress.ip_address(address.split("%", 1)[0])
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+        ip = ip.ipv4_mapped
+    return ip.is_global and not ip.is_multicast
+
+
+def validate_url(url: str, *, allow_private_hosts: bool = False) -> None:
+    """Refuse URLs a capture should never load.
+
+    Always: anything but http/https (file:, data:, chrome:, view-source:,
+    about:). Unless ``allow_private_hosts``: hosts that are, or resolve to,
+    non-public addresses. A host that does not resolve is left to navigation,
+    which fails on its own. This guards the initial URL and, in
+    ``Browser.page``, the post-redirect URL. It does not filter subresource
+    requests or defeat DNS rebinding, so treat it as a guard rail, not a
+    sandbox, when URLs come from untrusted input.
+    """
+    parsed = urlparse(url)
+    scheme = (parsed.scheme or "").lower()
+    if scheme not in ALLOWED_SCHEMES:
+        raise UnsafeURLError(f"refusing {scheme or 'scheme-less'} URL: {url}", url=url, kind="UnsafeURLError")
+    host = parsed.hostname
+    if not host:
+        raise UnsafeURLError(f"URL has no host: {url}", url=url, kind="UnsafeURLError")
+    if allow_private_hosts:
+        return
+    try:
+        addresses = [host] if _looks_like_ip(host) else [
+            info[4][0] for info in socket.getaddrinfo(host, parsed.port or None, proto=socket.IPPROTO_TCP)
+        ]
+    except socket.gaierror:
+        return
+    for address in addresses:
+        if not _is_public_ip(address):
+            raise UnsafeURLError(
+                f"refusing non-public host {host} ({address}); pass allow_private_hosts=True for local targets",
+                url=url,
+                kind="UnsafeURLError",
+            )
+
+
+def _looks_like_ip(host: str) -> bool:
+    try:
+        ipaddress.ip_address(host.split("%", 1)[0])
+    except ValueError:
+        return False
+    return True
 
 
 @dataclass
@@ -209,16 +271,19 @@ class Browser:
         wait: Wait = "networkidle_fallback",
         timeout_ms: int = DEFAULT_TIMEOUT_MS,
         settle_ms: int = DEFAULT_SETTLE_MS,
+        allow_private_hosts: bool = False,
         **overrides: Any,
     ) -> Iterator[tuple[Any, PageCapture]]:
         """Open ``url`` and yield ``(page, capture)``.
 
         Playwright errors from navigation or from the caller's inspection
-        inside the block are raised as ``PageCheckError``. The page is always
-        closed on exit.
+        inside the block are raised as ``PageCheckError``. ``url`` and the
+        post-redirect URL go through ``validate_url`` (``UnsafeURLError``, a
+        ``PageCheckError``). The page is always closed on exit.
         """
         if self._browser is None:
             raise RuntimeError("Browser.page() needs an entered Browser: use 'with Browser() as browser'")
+        validate_url(url, allow_private_hosts=allow_private_hosts)
         page = self._browser.new_page(**context_options(profile, **overrides))
         capture = PageCapture(url=url)
         page.on(
@@ -246,6 +311,8 @@ class Browser:
                 raise PageCheckError(str(exc), url=url, kind=type(exc).__name__) from exc
             capture.status = response.status if response is not None else None
             capture.final_url = page.url
+            if capture.final_url != url:
+                validate_url(capture.final_url, allow_private_hosts=allow_private_hosts)
             try:
                 yield page, capture
             except self._error as exc:

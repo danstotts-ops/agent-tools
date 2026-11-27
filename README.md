@@ -173,6 +173,7 @@ print(capture.status, capture.errors, capture.failed_requests)
 - Profiles: `mobile` is 390x844, DPR 3, touch. `desktop` is 1440x900. Both send a real Chrome user agent, because beacons 403 HeadlessChrome.
 - Default wait is `networkidle_fallback`: networkidle first, then on timeout only, load plus a 2s settle. The other waits are `load_settle`, `load`, `networkidle`, and `domcontentloaded`.
 - `PageCheckError` wraps any Playwright error from navigation or from your inspection code. `.kind` keeps the original class name. An HTTP 500 is not an error; read `capture.status`.
+- URL guard: `page()` accepts only http(s) URLs and refuses hosts that are, or resolve to, loopback, private, link-local, or metadata addresses. It checks again after redirects and raises `UnsafeURLError`, which is a `PageCheckError`. Pass `allow_private_hosts=True` only for local test targets. Subresource requests and DNS rebinding are not filtered, so don't treat this as a sandbox for untrusted URLs.
 - `BrowserUnavailable` means Playwright isn't installed. A Chromium launch failure raises as-is.
 - The module is standalone (stdlib plus Playwright, enforced by a test). An agent that needs nothing else from this package can install it lean:
 

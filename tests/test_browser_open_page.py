@@ -11,7 +11,7 @@ from tests.test_browser import site  # noqa: F401  (fixture)
 
 def test_open_page_one_shot(site):  # noqa: F811
     try:
-        with open_page(f"{site}/ok", wait="load") as (page, capture):
+        with open_page(f"{site}/ok", wait="load", allow_private_hosts=True) as (page, capture):
             assert page.viewport_size == {"width": 390, "height": 844}
     except BrowserUnavailable:
         pytest.skip("playwright not installed")
