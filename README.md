@@ -36,6 +36,8 @@ agent_tools/
   google/
     client.py           # Google REST client: GA4, Search Console, Tag Manager, YouTube (OAuth refresh token, ADC, or GOOGLE_API_KEY for public YouTube reads only)
     mcp.py              # MCP servers, one per product: ga4_server, gsc_server, gtm_server, youtube_server
+  linear/
+    client.py           # Linear context bus: read_context, post_handoff, open_objective
 ```
 
 ## Usage from an agent
@@ -88,6 +90,7 @@ Each MCP server reads its own credentials from env. Agents must set these in `.e
 - **Snowflake**: `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USER`, `SNOWFLAKE_PRIVATE_KEY`, `SNOWFLAKE_PRIVATE_KEY_PASSPHRASE`, `SNOWFLAKE_ROLE`, `SNOWFLAKE_WAREHOUSE`, `SNOWFLAKE_DATABASE`
 - **Notion**: `NOTION_API_TOKEN`
 - **Drive**: `DRIVE_ACCESS_TOKEN`, `DRIVE_REFRESH_TOKEN`, `DRIVE_OAUTH_CLIENT_ID`, `DRIVE_OAUTH_CLIENT_SECRET`
+- **Linear**: `LINEAR_API_KEY` (falls back to `COS_LINEAR_API_KEY`). Optional `AGENT_LINEAR_TEAM` overrides the default team key `MAGENT`.
 
 ## What's NOT here yet
 
@@ -123,3 +126,28 @@ brand.source_used()          # "brand", "s3", "github", "env" or "snapshot"
 ```
 
 Resolution, first that loads wins: `BRAND_JSON_PATH` (local file), https://brand.runpod.io/brand.json, the same file from S3 (https://runpod-brand-json.s3.us-east-1.amazonaws.com/brand.json), the private raw GitHub URL when `GITHUB_TOKEN` is set, then the bundled `brand.snapshot.json`. Network reads are cached 24 hours; `BRAND_JSON_OFFLINE=1` skips the network (tests should set it). Deprecated colours are never loaded. Refresh the snapshot from https://brand.runpod.io/brand.json when the canon changes.
+
+## Linear context bus (`agent_tools.linear`)
+
+Agents share work state through one Linear team (`MAGENT`). The conventions:
+
+- One issue per objective, never one per scheduler tick. The label `agent:<slug>` names the owner.
+- The issue description is the brief: goal, inputs, definition of done.
+- Comments are the handoff log, written with `post_handoff` so they share one shape.
+- A project document titled "Current state" is the standing context for a program.
+- `blocks` relations carry dependencies between agents.
+
+```python
+from agent_tools import linear
+
+ctx = linear.read_context("web")              # open issues, recent comments, blockers, project state
+prompt = ctx["markdown"] + "\n\n" + user_ask if ctx["ok"] else user_ask
+
+linear.post_handoff("MAGENT-123", "web", "Audited /pricing on mobile 4G",
+                    findings=["LCP 3.1s, hero image is the LCP element"],
+                    next_steps=["swap hero to AVIF"], state="In Review")
+
+linear.open_objective("web", "Audit /pricing CWV", "Goal: LCP under 2.5s", requested_by="cos")
+```
+
+Every call returns `{"ok": bool, ...}` and never raises. `post_handoff` skips a handoff already on the issue, and `open_objective` returns the open issue instead of filing a duplicate. Everything this module writes starts with an `<!-- agent-handoff:v1` or `<!-- agent-objective:v1` marker; a webhook that ingests Linear events must drop bodies where `linear.is_agent_generated(body)` is true.
