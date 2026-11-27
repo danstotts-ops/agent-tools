@@ -104,12 +104,20 @@ def is_agent_generated(text: str | None) -> bool:
     return head.startswith(HANDOFF_MARKER) or head.startswith(OBJECTIVE_MARKER)
 
 
+_FENCE_RE = re.compile(r"<\s*<\s*<|>\s*>\s*>|linear-data", re.IGNORECASE)
+
+
 def _neutralize(text: str | None) -> str:
-    """Untrusted Linear text cannot close the data fence or forge a marker."""
+    """Untrusted Linear text cannot open or close the data fence or forge a
+    marker. Every run of three angle brackets and every "linear-data" token is
+    rewritten to text containing none of those characters, and the loop runs to
+    a fixed point so no replacement can re-form a delimiter."""
     text = text or ""
-    for seq, safe in ((UNTRUSTED_OPEN, "<<linear-data"), (UNTRUSTED_CLOSE, "linear-data>>"), ("<!--", "<!_-")):
-        text = text.replace(seq, safe)
-    return text
+    while True:
+        cleaned = _FENCE_RE.sub("[fence]", text).replace("<!--", "[comment]")
+        if cleaned == text:
+            return cleaned
+        text = cleaned
 
 
 def _clip(text: str | None, limit: int) -> str:
@@ -141,7 +149,7 @@ query AgentContext($team: String!, $label: String!, $states: [String!], $first: 
         id name url
         documents(first: 20) { nodes { title url updatedAt content } }
       }
-      comments(first: 50) { nodes { body createdAt user { name } } }
+      comments(first: 50) { nodes { body createdAt user { name isMe } } }
       inverseRelations { nodes { type issue { identifier title state { name type } } } }
     }
   }
@@ -216,6 +224,9 @@ def read_context(
                     "author": (c.get("user") or {}).get("name") or "unknown",
                     "created_at": c.get("createdAt"),
                     "body": c.get("body") or "",
+                    # Agent provenance needs both: written by this key's own Linear
+                    # identity AND carrying the marker. Marker text alone is spoofable.
+                    "from_agent": bool((c.get("user") or {}).get("isMe")) and is_agent_generated(c.get("body")),
                 }
                 for c in comments
             ],
@@ -261,7 +272,7 @@ def render_context(agent: str, team: str, issues: list[dict], docs: list[dict], 
             lines.append("Recent comments, oldest first:")
             for c in i["recent_comments"]:
                 day = (c["created_at"] or "")[:10]
-                origin = "agent" if is_agent_generated(c["body"]) else "human"
+                origin = "agent" if c.get("from_agent") else "human"
                 lines.append(f"- {day} [{origin}] {_neutralize(c['author'])}: {_clip(_neutralize(c['body']), 600)}")
     for d in docs:
         lines.append("")
