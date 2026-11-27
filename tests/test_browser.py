@@ -210,12 +210,34 @@ def test_validate_url_allows_public_hosts(monkeypatch):
     validate_url("https://www.runpod.io/pricing")
 
 
-def test_unresolvable_host_is_left_to_navigation(monkeypatch):
+def test_unresolvable_host_fails_closed(monkeypatch):
     def fail(*a, **k):
         raise browser.socket.gaierror("nope")
 
     monkeypatch.setattr(browser.socket, "getaddrinfo", fail)
-    validate_url("https://does-not-resolve.example/")
+    with pytest.raises(UnsafeURLError):
+        validate_url("https://does-not-resolve.example/")
+    validate_url("https://does-not-resolve.example/", allow_private_hosts=True)
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://127.0.0.1\\@www.runpod.io/",  # Chromium: host 127.0.0.1; urlparse: www.runpod.io
+        "http://www.runpod.io\\.evil.test/",
+        "http://user:pw@www.runpod.io/",
+        "http://www.runpod.io@127.0.0.1/",
+        "http://www.runpod.io /",
+        "http://www.runpod.io/\tpath",
+        "http://www.runpod.io/\x00",
+    ],
+)
+def test_validate_url_rejects_parser_differentials(url, monkeypatch):
+    monkeypatch.setattr(
+        browser.socket, "getaddrinfo", lambda *a, **k: [(None, None, None, "", ("104.18.0.1", 0))]
+    )
+    with pytest.raises(UnsafeURLError):
+        validate_url(url, allow_private_hosts=True)
 
 
 class _RedirectingPage:

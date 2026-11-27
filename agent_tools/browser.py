@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import contextlib
 import ipaddress
+import re
 import socket
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -99,6 +100,10 @@ class UnsafeURLError(PageCheckError):
 
 
 ALLOWED_SCHEMES = frozenset({"http", "https"})
+# Characters Python's urlparse and Chromium's URL parser disagree on (Chromium
+# treats a backslash as a path separator), so "http://127.0.0.1\\@evil.test"
+# would read as public here and private in the browser. Refuse them outright.
+_AMBIGUOUS_URL_CHARS = re.compile(r"[\x00-\x20\x7f\\]")
 
 
 def _is_public_ip(address: str) -> bool:
@@ -112,17 +117,26 @@ def validate_url(url: str, *, allow_private_hosts: bool = False) -> None:
     """Refuse URLs a capture should never load.
 
     Always: anything but http/https (file:, data:, chrome:, view-source:,
-    about:). Unless ``allow_private_hosts``: hosts that are, or resolve to,
-    non-public addresses. A host that does not resolve is left to navigation,
-    which fails on its own. This guards the initial URL and, in
-    ``Browser.page``, the post-redirect URL. It does not filter subresource
-    requests or defeat DNS rebinding, so treat it as a guard rail, not a
-    sandbox, when URLs come from untrusted input.
+    about:), user:password@ credentials, and backslashes, whitespace, or
+    control characters that browsers and Python parse differently. Unless
+    ``allow_private_hosts``: hosts that are, or resolve to, non-public
+    addresses, and hosts that do not resolve (fail closed).
+
+    ``Browser.page`` applies this to the requested URL and the post-redirect
+    URL. The browser still issues the redirected request, subresource
+    requests are not filtered, and DNS rebinding is not defeated. Intercepting
+    every request would disable Playwright's HTTP cache and still miss
+    redirect hops, so it is not done here: for untrusted URLs, the control is
+    network-level egress policy on the container. This is a guard rail.
     """
+    if _AMBIGUOUS_URL_CHARS.search(url):
+        raise UnsafeURLError(f"refusing URL with backslash, whitespace, or control characters: {url!r}", url=url, kind="UnsafeURLError")
     parsed = urlparse(url)
     scheme = (parsed.scheme or "").lower()
     if scheme not in ALLOWED_SCHEMES:
         raise UnsafeURLError(f"refusing {scheme or 'scheme-less'} URL: {url}", url=url, kind="UnsafeURLError")
+    if "@" in parsed.netloc:
+        raise UnsafeURLError(f"refusing URL with embedded credentials: {url}", url=url, kind="UnsafeURLError")
     host = parsed.hostname
     if not host:
         raise UnsafeURLError(f"URL has no host: {url}", url=url, kind="UnsafeURLError")
@@ -132,8 +146,12 @@ def validate_url(url: str, *, allow_private_hosts: bool = False) -> None:
         addresses = [host] if _looks_like_ip(host) else [
             info[4][0] for info in socket.getaddrinfo(host, parsed.port or None, proto=socket.IPPROTO_TCP)
         ]
-    except socket.gaierror:
-        return
+    except socket.gaierror as exc:
+        raise UnsafeURLError(
+            f"refusing {host}: it did not resolve, so it cannot be checked ({exc})",
+            url=url,
+            kind="UnsafeURLError",
+        ) from exc
     for address in addresses:
         if not _is_public_ip(address):
             raise UnsafeURLError(
