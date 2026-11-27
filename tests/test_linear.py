@@ -357,3 +357,11 @@ def test_neutralize_reaches_a_fixed_point(payload):
     assert linear.UNTRUSTED_OPEN not in out and linear.UNTRUSTED_CLOSE not in out
     assert "linear-data" not in out.lower() and "<!--" not in out
     assert linear._neutralize(out) == out
+
+
+def test_objective_marker_line_not_rendered(fake):
+    brief = f"{linear.OBJECTIVE_MARKER} agent=web from=cos -->\nGoal: prove the loop."
+    fake({"AgentContext": {"data": {"issues": {"nodes": [_issue_node(description=brief)]}}}})
+    md = linear.read_context("web")["markdown"]
+    assert "Brief:\nGoal: prove the loop." in md
+    assert "agent-objective" not in md

@@ -120,6 +120,14 @@ def _neutralize(text: str | None) -> str:
         text = cleaned
 
 
+def _strip_marker_line(text: str) -> str:
+    """Drop this module's own metadata header from a brief before rendering."""
+    first, _, rest = (text or "").lstrip().partition("\n")
+    if first.startswith((OBJECTIVE_MARKER, HANDOFF_MARKER)) and first.rstrip().endswith("-->"):
+        return rest
+    return text
+
+
 def _clip(text: str | None, limit: int) -> str:
     text = (text or "").strip()
     return text if len(text) <= limit else text[: limit - 15].rstrip() + "\n[truncated]"
@@ -267,7 +275,7 @@ def render_context(agent: str, team: str, issues: list[dict], docs: list[dict], 
                 f"{b['identifier']} ({b['state']})" for b in i["blocked_by"]))
         if i["brief"]:
             lines.append("Brief:")
-            lines.append(_clip(_neutralize(i["brief"]), 1500))
+            lines.append(_clip(_neutralize(_strip_marker_line(i["brief"])), 1500))
         if i["recent_comments"]:
             lines.append("Recent comments, oldest first:")
             for c in i["recent_comments"]:
