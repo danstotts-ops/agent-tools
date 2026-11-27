@@ -38,6 +38,7 @@ agent_tools/
     mcp.py              # MCP servers, one per product: ga4_server, gsc_server, gtm_server, youtube_server
   linear/
     client.py           # Linear context bus: read_context, post_handoff, open_objective
+  browser.py            # headless page capture (Playwright): profiles, error collector, screenshots, computed styles
 ```
 
 ## Usage from an agent
@@ -151,3 +152,34 @@ linear.open_objective("web", "Audit /pricing CWV", "Goal: LCP under 2.5s", reque
 ```
 
 Every call returns `{"ok": bool, ...}` and never raises. `post_handoff` skips a handoff already on the issue, and `open_objective` returns the open issue instead of filing a duplicate. Everything this module writes starts with an `<!-- agent-handoff:v1` or `<!-- agent-objective:v1` marker; a webhook that ingests Linear events must drop bodies where `linear.is_agent_generated(body)` is true.
+
+## Browser capture (`agent_tools.browser`)
+
+One way for the fleet to open a rendered page. Audit and rationale: `docs/browser-capture-audit-2026-11-26.md`.
+
+```python
+from agent_tools.browser import Browser, PageCheckError, computed_styles, screenshot
+
+with Browser() as browser:
+    try:
+        with browser.page("https://www.runpod.io/pricing", profile="mobile") as (page, capture):
+            styles = computed_styles(page, ["h1"], ["color", "font-family"])
+            screenshot(page, "captures/pricing-mobile.png", full_page=True)
+    except PageCheckError as exc:
+        print(exc.kind, exc)
+print(capture.status, capture.errors, capture.failed_requests)
+```
+
+- Profiles: `mobile` is 390x844, DPR 3, touch. `desktop` is 1440x900. Both send a real Chrome user agent, because beacons 403 HeadlessChrome.
+- Default wait is `networkidle_fallback`: networkidle first, then on timeout only, load plus a 2s settle. The other waits are `load_settle`, `load`, `networkidle`, and `domcontentloaded`.
+- `PageCheckError` wraps any Playwright error from navigation or from your inspection code. `.kind` keeps the original class name. An HTTP 500 is not an error; read `capture.status`.
+- `BrowserUnavailable` means Playwright isn't installed. A Chromium launch failure raises as-is.
+- The module is standalone (stdlib plus Playwright, enforced by a test). An agent that needs nothing else from this package can install it lean:
+
+```dockerfile
+RUN pip install -r requirements.txt \
+    && pip install --no-deps "agent-tools @ https://github.com/danstotts-ops/agent-tools/archive/<sha>.tar.gz" \
+    && python -m playwright install --with-deps chromium
+```
+
+  Pin `playwright==1.55.0` (`PLAYWRIGHT_VERSION`) in the agent's own requirements.
