@@ -166,3 +166,32 @@ def test_public_auth_header_for_external_clients(monkeypatch, app_env):
     assert len(http.token_calls) == 2
     assert pub.is_auth_failure(AUTH_FAIL.status_code, AUTH_FAIL.json())
     assert not pub.is_auth_failure(200, {"data": {}})
+
+
+@pytest.mark.parametrize("status,body", [
+    # Message text mentions authentication but the error is not an auth error:
+    # user content can echo into messages, so text never triggers a retry.
+    (400, {"errors": [{"message": "Authentication docs say X", "extensions": {"type": "invalid input"}}]}),
+    (400, {"errors": [{"message": "authenticate me"}]}),
+    # Any returned data means the request executed: never retried.
+    (200, {"data": {"commentCreate": {"success": True}},
+           "errors": [{"message": "x", "extensions": {"type": "authentication error"}}]}),
+])
+def test_non_auth_errors_and_executed_requests_are_never_retried(monkeypatch, app_env, status, body):
+    http = _install(monkeypatch, FakeHTTP([_tok(1)], [Resp(status, body)]))
+    try:
+        linear._gql("mutation M { commentCreate(input: {}) { success } }")
+    except linear.LinearError:
+        pass
+    assert len(http.gql_calls) == 1 and len(http.token_calls) == 1
+
+
+@pytest.mark.parametrize("status,body", [
+    (401, {}),
+    (403, {"errors": [{"message": "Forbidden"}]}),
+    (400, {"data": None, "errors": [{"message": "x", "extensions": {"code": "AUTHENTICATION_ERROR"}}]}),
+])
+def test_structural_auth_failures_are_retried(monkeypatch, app_env, status, body):
+    http = _install(monkeypatch, FakeHTTP([_tok(1), _tok(2)], [Resp(status, body), OK]))
+    linear._gql("query Q { viewer { id } }")
+    assert len(http.gql_calls) == 2

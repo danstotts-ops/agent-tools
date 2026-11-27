@@ -148,18 +148,35 @@ def is_auth_failure(status: int, body: Any) -> bool:
     return _is_auth_failure(status, body)
 
 
+_AUTH_ERROR_TYPES = {"authentication error", "authentication_error"}
+_AUTH_ERROR_CODES = {"AUTHENTICATION_ERROR", "UNAUTHENTICATED"}
+
+
 def _is_auth_failure(status: int, body: Any) -> bool:
-    if status == 401:
+    """Structural check only, never a substring of message text, which can echo
+    user content. A response that carries any data executed, so it is never an
+    auth failure: that is what keeps the one retry in _post from re-running a
+    mutation."""
+    if isinstance(body, dict) and any(v is not None for v in (body.get("data") or {}).values()):
+        return False
+    if status in (401, 403):
         return True
     errors = body.get("errors") if isinstance(body, dict) else None
-    return any("authenticat" in str(e).lower() for e in errors or [])
+    for e in errors or []:
+        ext = e.get("extensions") if isinstance(e, dict) else None
+        if not isinstance(ext, dict):
+            continue
+        if str(ext.get("type", "")).lower() in _AUTH_ERROR_TYPES or ext.get("code") in _AUTH_ERROR_CODES:
+            return True
+    return False
 
 
 def _post(payload: dict) -> dict:
     """Single HTTP seam. Tests monkeypatch this.
 
-    With app credentials, an auth failure re-mints the token once and retries,
-    which covers revocation, secret rotation, and a scope change."""
+    With app credentials, a request Linear rejected as unauthenticated (so it
+    never executed) re-mints the token once and retries. That covers
+    revocation, secret rotation, and a scope change."""
     use_app = _app_credentials() is not None
     for attempt in (0, 1):
         resp = requests.post(
