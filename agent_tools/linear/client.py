@@ -383,6 +383,40 @@ mutation IssueCreate($input: IssueCreateInput!) {
 """
 
 
+_LABEL_LOOKUP = """
+query LabelLookup($team: String!, $label: String!) {
+  teams(filter: { key: { eq: $team } }) { nodes { id } }
+  issueLabels(first: 1, filter: { name: { eq: $label } }) { nodes { id } }
+}
+"""
+
+
+def _create_label(name: str, team_id: str) -> str | None:
+    made = _gql(_LABEL_CREATE, {"input": {"name": name, "teamId": team_id, "color": "#5E6AD2"}})
+    return (((made.get("issueLabelCreate") or {}).get("issueLabel")) or {}).get("id")
+
+
+def ensure_agent_label(agent: str, *, team: str = DEFAULT_TEAM) -> dict:
+    """Return the id of the ``agent:<slug>`` label, creating it on ``team``
+    if it does not exist. For callers that file issues with their own client
+    but still need the owner label."""
+    try:
+        label = label_for(agent)
+        data = _gql(_LABEL_LOOKUP, {"team": team, "label": label})
+        labels = (data.get("issueLabels") or {}).get("nodes", [])
+        if labels:
+            return {"ok": True, "label": label, "label_id": labels[0]["id"], "created": False}
+        teams = (data.get("teams") or {}).get("nodes", [])
+        if not teams:
+            return {"ok": False, "error": f"Linear team {team!r} not found"}
+        label_id = _create_label(label, teams[0]["id"])
+        if not label_id:
+            return {"ok": False, "error": f"Could not create label {label}"}
+        return {"ok": True, "label": label, "label_id": label_id, "created": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
 def open_objective(
     agent: str,
     title: str,
@@ -417,13 +451,9 @@ def open_objective(
             return {"ok": True, "created": False, "issue": hit["identifier"], "url": hit.get("url")}
 
         labels = (data.get("issueLabels") or {}).get("nodes", [])
-        if labels:
-            label_id = labels[0]["id"]
-        else:
-            made = _gql(_LABEL_CREATE, {"input": {"name": label, "teamId": team_id, "color": "#5E6AD2"}})
-            label_id = (((made.get("issueLabelCreate") or {}).get("issueLabel")) or {}).get("id")
-            if not label_id:
-                return {"ok": False, "error": f"Could not create label {label}"}
+        label_id = labels[0]["id"] if labels else _create_label(label, team_id)
+        if not label_id:
+            return {"ok": False, "error": f"Could not create label {label}"}
 
         description = f"{OBJECTIVE_MARKER} agent={agent} from={requested_by} -->\n{brief.strip()}"
         issue_input: dict[str, Any] = {

@@ -267,3 +267,26 @@ def test_open_objective_unknown_team(fake):
                                     "issues": {"nodes": []}}}})
     out = linear.open_objective("web", "t", "b", requested_by="cos", team="NOPE")
     assert out["ok"] is False and "NOPE" in out["error"]
+
+
+# --- ensure_agent_label --------------------------------------------------------
+
+def test_ensure_agent_label_existing_and_created(fake):
+    f = fake({"LabelLookup": {"data": {"teams": {"nodes": [{"id": "team"}]},
+                                       "issueLabels": {"nodes": [{"id": "lbl"}]}}}})
+    assert linear.ensure_agent_label("seo") == {"ok": True, "label": "agent:seo", "label_id": "lbl", "created": False}
+    assert f.ops() == ["LabelLookup"]
+
+    f = fake({
+        "LabelLookup": {"data": {"teams": {"nodes": [{"id": "team"}]}, "issueLabels": {"nodes": []}}},
+        "LabelCreate": {"data": {"issueLabelCreate": {"success": True, "issueLabel": {"id": "new"}}}},
+    })
+    out = linear.ensure_agent_label("seo")
+    assert out["ok"] and out["label_id"] == "new" and out["created"] is True
+    assert f.calls[1]["variables"]["input"]["teamId"] == "team"
+
+
+def test_ensure_agent_label_bad_slug_and_team(fake):
+    assert linear.ensure_agent_label("Not A Slug")["ok"] is False
+    fake({"LabelLookup": {"data": {"teams": {"nodes": []}, "issueLabels": {"nodes": []}}}})
+    assert linear.ensure_agent_label("seo", team="NOPE")["ok"] is False
