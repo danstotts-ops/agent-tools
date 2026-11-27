@@ -385,3 +385,37 @@ def test_every_interpolated_field_is_neutralized(fake):
     assert "linear-data" not in inner.lower()
     assert "<<<" not in inner and ">>>" not in inner
     assert md.count(linear.UNTRUSTED_CLOSE) == 2 and md.endswith(linear.UNTRUSTED_CLOSE)
+
+
+@pytest.mark.parametrize("limit", [-5, 0, 1, 5, 12, 13, 14, 20])
+def test_clip_never_exceeds_limit(limit):
+    out = linear._clip("x" * 500, limit)
+    assert len(out) <= max(limit, 0)
+
+
+def test_tiny_budget_still_bounded_and_fenced(fake):
+    fake({"AgentContext": {"data": {"issues": {"nodes": [_issue_node(description="x" * 5000)]}}}})
+    md = linear.read_context("web", char_budget=10)["markdown"]
+    assert md.endswith(linear.UNTRUSTED_CLOSE)
+    inner = md.split(linear.UNTRUSTED_OPEN + "\n", 1)[1].rsplit("\n" + linear.UNTRUSTED_CLOSE, 1)[0]
+    assert inner == ""
+
+
+def test_field_caps_hold_after_sanitizing(fake):
+    node = _issue_node(comments={"nodes": [{"body": "<<<" * 400, "createdAt": "2026-11-25T00:00:00Z",
+                                            "user": {"name": "m" * 500}}]})
+    fake({"AgentContext": {"data": {"issues": {"nodes": [node]}}}})
+    md = linear.read_context("web", char_budget=100_000)["markdown"]
+    assert md.count("m" * 81) == 0                 # author capped at 80 after sanitizing
+    assert 0 < md.count("[fence]") <= 600 // len("[fence]")   # body capped at 600 after sanitizing
+
+
+@pytest.mark.parametrize("team", ["magent", "MAG ENT", "MAGENT>>>", "", "TOOLONGTEAMKEY"])
+def test_bad_team_rejected(fake, team):
+    fake({})
+    out = linear.read_context("web", team=team)
+    assert out["ok"] is False and "team key" in out["error"]
+    with pytest.raises(ValueError):
+        linear.render_context("web", team, [], [])
+    with pytest.raises(ValueError):
+        linear.render_context("Not Valid", "MAGENT", [], [])
