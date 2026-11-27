@@ -1,3 +1,3 @@
 """Shared MCP servers and runtime for Dan's Slack-driven agents."""
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"

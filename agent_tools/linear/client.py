@@ -143,6 +143,17 @@ def auth_header(*, force_new: bool = False) -> str:
     return _auth_header(force_new=force_new)
 
 
+def is_read_only(query: str) -> bool:
+    """True for a GraphQL query operation; mutations are never resent."""
+    return not (query or "").lstrip().lower().startswith("mutation")
+
+
+def invalidate_app_token() -> None:
+    """Drop the cached app token so the next call mints a fresh one."""
+    with _app_token_lock:
+        _app_token.pop("current", None)
+
+
 def is_auth_failure(status: int, body: Any) -> bool:
     """True when a GraphQL response means the credential was rejected."""
     return _is_auth_failure(status, body)
@@ -159,7 +170,7 @@ def _is_auth_failure(status: int, body: Any) -> bool:
     mutation."""
     if isinstance(body, dict) and any(v is not None for v in (body.get("data") or {}).values()):
         return False
-    if status in (401, 403):
+    if status == 401:
         return True
     errors = body.get("errors") if isinstance(body, dict) else None
     for e in errors or []:
@@ -174,23 +185,27 @@ def _is_auth_failure(status: int, body: Any) -> bool:
 def _post(payload: dict) -> dict:
     """Single HTTP seam. Tests monkeypatch this.
 
-    With app credentials, a request Linear rejected as unauthenticated (so it
-    never executed) re-mints the token once and retries. That covers
-    revocation, secret rotation, and a scope change."""
+    With app credentials, a 401 or an authentication-typed error drops the
+    cached token so the next call mints a fresh one (revocation, secret
+    rotation, scope change). Only a read query is resent right away; a mutation
+    is never resent, and its caller sees the error."""
     use_app = _app_credentials() is not None
+    retry_ok = is_read_only(str(payload.get("query", "")))
     for attempt in (0, 1):
         resp = requests.post(
             API_URL,
             json=payload,
-            headers={"Authorization": _auth_header(force_new=attempt == 1), "Content-Type": "application/json"},
+            headers={"Authorization": _auth_header(), "Content-Type": "application/json"},
             timeout=_TIMEOUT_S,
         )
         try:
             body = resp.json()
         except ValueError:
             raise LinearError(f"Linear returned HTTP {resp.status_code} with a non-JSON body")
-        if use_app and attempt == 0 and _is_auth_failure(resp.status_code, body):
-            continue
+        if use_app and _is_auth_failure(resp.status_code, body):
+            invalidate_app_token()
+            if attempt == 0 and retry_ok:
+                continue
         return body
     return body
 

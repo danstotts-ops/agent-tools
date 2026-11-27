@@ -105,6 +105,22 @@ def test_auth_failure_remints_and_retries_once(monkeypatch, app_env):
     assert [c["headers"]["Authorization"] for c in http.gql_calls] == ["Bearer app-token-1", "Bearer app-token-2"]
 
 
+def test_rejected_mutation_is_not_resent_but_next_call_gets_fresh_token(monkeypatch, app_env):
+    http = _install(monkeypatch, FakeHTTP([_tok(1), _tok(2)], [AUTH_FAIL, OK]))
+    with pytest.raises(linear.LinearError):
+        linear._gql("mutation M { commentCreate(input: {}) { success } }")
+    assert len(http.gql_calls) == 1
+    linear._gql("query Q { viewer { id } }")
+    assert http.gql_calls[1]["headers"]["Authorization"] == "Bearer app-token-2"
+
+
+def test_forbidden_is_authorization_not_authentication(monkeypatch, app_env):
+    http = _install(monkeypatch, FakeHTTP([_tok(1)], [Resp(403, {"errors": [{"message": "Forbidden"}]})]))
+    with pytest.raises(linear.LinearError):
+        linear._gql("query Q { viewer { id } }")
+    assert len(http.gql_calls) == 1 and len(http.token_calls) == 1
+
+
 def test_persistent_auth_failure_is_reported_after_one_retry(monkeypatch, app_env):
     http = _install(monkeypatch, FakeHTTP([_tok(1), _tok(2)], [AUTH_FAIL, AUTH_FAIL]))
     out = linear.read_context("web-agent")
@@ -188,7 +204,6 @@ def test_non_auth_errors_and_executed_requests_are_never_retried(monkeypatch, ap
 
 @pytest.mark.parametrize("status,body", [
     (401, {}),
-    (403, {"errors": [{"message": "Forbidden"}]}),
     (400, {"data": None, "errors": [{"message": "x", "extensions": {"code": "AUTHENTICATION_ERROR"}}]}),
 ])
 def test_structural_auth_failures_are_retried(monkeypatch, app_env, status, body):
