@@ -155,3 +155,14 @@ def test_no_credentials_at_all_names_both_options(monkeypatch):
     out = linear.read_context("web-agent")
     assert out["ok"] is False
     assert "LINEAR_CLIENT_ID" in out["error"] and "LINEAR_API_KEY" in out["error"]
+
+
+def test_public_auth_header_for_external_clients(monkeypatch, app_env):
+    http = _install(monkeypatch, FakeHTTP([_tok(1), _tok(2)], []))
+    from agent_tools import linear as pub
+    assert pub.auth_header() == "Bearer app-token-1"
+    assert pub.auth_header() == "Bearer app-token-1"
+    assert pub.auth_header(force_new=True) == "Bearer app-token-2"
+    assert len(http.token_calls) == 2
+    assert pub.is_auth_failure(AUTH_FAIL.status_code, AUTH_FAIL.json())
+    assert not pub.is_auth_failure(200, {"data": {}})

@@ -134,6 +134,20 @@ def _auth_header(*, force_new: bool = False) -> str:
         return f"Bearer {tok['token']}"
 
 
+def auth_header(*, force_new: bool = False) -> str:
+    """Authorization header value for callers that keep their own HTTP client.
+
+    App mode returns ``Bearer <app token>`` (minted and cached here); key mode
+    returns the raw personal key. Pass ``force_new=True`` once after an auth
+    failure. Raises LinearError when no credentials are configured."""
+    return _auth_header(force_new=force_new)
+
+
+def is_auth_failure(status: int, body: Any) -> bool:
+    """True when a GraphQL response means the credential was rejected."""
+    return _is_auth_failure(status, body)
+
+
 def _is_auth_failure(status: int, body: Any) -> bool:
     if status == 401:
         return True
