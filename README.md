@@ -91,7 +91,7 @@ Each MCP server reads its own credentials from env. Agents must set these in `.e
 - **Snowflake**: `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USER`, `SNOWFLAKE_PRIVATE_KEY`, `SNOWFLAKE_PRIVATE_KEY_PASSPHRASE`, `SNOWFLAKE_ROLE`, `SNOWFLAKE_WAREHOUSE`, `SNOWFLAKE_DATABASE`
 - **Notion**: `NOTION_API_TOKEN`
 - **Drive**: `DRIVE_ACCESS_TOKEN`, `DRIVE_REFRESH_TOKEN`, `DRIVE_OAUTH_CLIENT_ID`, `DRIVE_OAUTH_CLIENT_SECRET`
-- **Linear**: `LINEAR_API_KEY` (falls back to `COS_LINEAR_API_KEY`). Optional `AGENT_LINEAR_TEAM` overrides the default team key `MAGENT`.
+- **Linear**: preferred is `LINEAR_CLIENT_ID` + `LINEAR_CLIENT_SECRET` for the fleet's OAuth app (client credentials), so writes show as the app. Otherwise `LINEAR_API_KEY` (falls back to `COS_LINEAR_API_KEY`), and writes show as the key's owner. Optional `AGENT_LINEAR_TEAM` overrides the default team key `MAGENT`.
 
 ## What's NOT here yet
 
@@ -130,7 +130,11 @@ Resolution, first that loads wins: `BRAND_JSON_PATH` (local file), https://brand
 
 ## Linear context bus (`agent_tools.linear`)
 
-Agents share work state through one Linear team (`MAGENT`). The conventions:
+Agents share work state through one Linear team (`MAGENT`).
+
+Identity: with `LINEAR_CLIENT_ID` and `LINEAR_CLIENT_SECRET` set, each process mints a 30-day app-actor token through the client_credentials grant, and every issue, comment, and label it writes is attributed to the app rather than a person. The token is cached in process and re-minted a day before expiry or after an auth failure. Every process sharing the app must request the same scopes (`APP_SCOPES = "read,write"`), because changing scopes revokes the app's live tokens, and rotating the client secret does too. `linear.auth_mode()` returns `app`, `api_key`, or `misconfigured`.
+
+The conventions:
 
 - One issue per objective, never one per scheduler tick. The label `agent:<slug>` names the owner.
 - The issue description is the brief: goal, inputs, definition of done.

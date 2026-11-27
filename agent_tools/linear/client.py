@@ -18,7 +18,13 @@ Three public calls cover the loop:
 Every public function returns an ``{"ok": bool, ...}`` dict and never raises,
 so a Linear outage cannot take an agent run down with it.
 
-Auth: ``LINEAR_API_KEY`` (fleet key), falling back to ``COS_LINEAR_API_KEY``.
+Auth, in order of preference:
+  1. ``LINEAR_CLIENT_ID`` + ``LINEAR_CLIENT_SECRET``: an OAuth app with client
+     credentials enabled. Each process mints a 30-day app-actor token, so every
+     write shows as the app ("bot user"), not as a person. Tokens are cached in
+     process and re-minted a day before expiry or on an auth failure.
+  2. ``LINEAR_API_KEY``, falling back to ``COS_LINEAR_API_KEY``: a personal key.
+     Writes show as the key's owner.
 """
 
 from __future__ import annotations
@@ -26,12 +32,19 @@ from __future__ import annotations
 import hashlib
 import os
 import re
+import threading
+import time
 from datetime import datetime, timezone
 from typing import Any, Iterable
 
 import requests
 
 API_URL = "https://api.linear.app/graphql"
+TOKEN_URL = "https://api.linear.app/oauth/token"
+# Every process sharing the app must request the SAME scope set: Linear lets
+# tokens coexist only when scopes match, and changing them revokes live tokens.
+APP_SCOPES = "read,write"
+_REFRESH_MARGIN_S = 24 * 3600
 DEFAULT_TEAM = os.environ.get("AGENT_LINEAR_TEAM", "MAGENT")
 LABEL_PREFIX = "agent:"
 CONTEXT_DOC_TITLE = "current state"
@@ -61,22 +74,93 @@ class LinearError(RuntimeError):
 def _api_key() -> str:
     key = os.environ.get("LINEAR_API_KEY") or os.environ.get("COS_LINEAR_API_KEY")
     if not key:
-        raise LinearError("LINEAR_API_KEY (or COS_LINEAR_API_KEY) not set in environment.")
+        raise LinearError(
+            "No Linear credentials: set LINEAR_CLIENT_ID + LINEAR_CLIENT_SECRET (app), "
+            "or LINEAR_API_KEY (or COS_LINEAR_API_KEY)."
+        )
     return key
 
 
-def _post(payload: dict) -> dict:
-    """Single HTTP seam. Tests monkeypatch this."""
+def _app_credentials() -> tuple[str, str] | None:
+    cid = os.environ.get("LINEAR_CLIENT_ID")
+    secret = os.environ.get("LINEAR_CLIENT_SECRET")
+    if cid and secret:
+        return cid, secret
+    if cid or secret:
+        raise LinearError("Set both LINEAR_CLIENT_ID and LINEAR_CLIENT_SECRET, or neither.")
+    return None
+
+
+def auth_mode() -> str:
+    """'app' when the OAuth app credentials are configured, else 'api_key'."""
+    try:
+        return "app" if _app_credentials() else "api_key"
+    except LinearError:
+        return "misconfigured"
+
+
+_app_token: dict[str, Any] = {}
+_app_token_lock = threading.Lock()
+
+
+def _mint_app_token(client_id: str, client_secret: str) -> dict[str, Any]:
+    """client_credentials grant. Error text never includes the secret or token."""
     resp = requests.post(
-        API_URL,
-        json=payload,
-        headers={"Authorization": _api_key(), "Content-Type": "application/json"},
+        TOKEN_URL,
+        data={"grant_type": "client_credentials", "scope": APP_SCOPES},
+        auth=(client_id, client_secret),
         timeout=_TIMEOUT_S,
     )
     try:
         body = resp.json()
     except ValueError:
-        raise LinearError(f"Linear returned HTTP {resp.status_code} with a non-JSON body")
+        raise LinearError(f"Linear token endpoint returned HTTP {resp.status_code} with a non-JSON body")
+    token = body.get("access_token") if isinstance(body, dict) else None
+    if resp.status_code != 200 or not token:
+        reason = (body.get("error_description") or body.get("error")) if isinstance(body, dict) else None
+        raise LinearError(f"Linear app token request failed (HTTP {resp.status_code}): {reason or 'no access_token'}")
+    return {"token": token, "expires_at": time.time() + int(body.get("expires_in") or 0)}
+
+
+def _auth_header(*, force_new: bool = False) -> str:
+    creds = _app_credentials()
+    if not creds:
+        return _api_key()
+    with _app_token_lock:
+        tok = _app_token.get("current")
+        if force_new or not tok or tok["expires_at"] - time.time() < _REFRESH_MARGIN_S:
+            tok = _mint_app_token(*creds)
+            _app_token["current"] = tok
+        return f"Bearer {tok['token']}"
+
+
+def _is_auth_failure(status: int, body: Any) -> bool:
+    if status == 401:
+        return True
+    errors = body.get("errors") if isinstance(body, dict) else None
+    return any("authenticat" in str(e).lower() for e in errors or [])
+
+
+def _post(payload: dict) -> dict:
+    """Single HTTP seam. Tests monkeypatch this.
+
+    With app credentials, an auth failure re-mints the token once and retries,
+    which covers revocation, secret rotation, and a scope change."""
+    use_app = _app_credentials() is not None
+    for attempt in (0, 1):
+        resp = requests.post(
+            API_URL,
+            json=payload,
+            headers={"Authorization": _auth_header(force_new=attempt == 1), "Content-Type": "application/json"},
+            timeout=_TIMEOUT_S,
+        )
+        try:
+            body = resp.json()
+        except ValueError:
+            raise LinearError(f"Linear returned HTTP {resp.status_code} with a non-JSON body")
+        if use_app and attempt == 0 and _is_auth_failure(resp.status_code, body):
+            continue
+        return body
     return body
 
 

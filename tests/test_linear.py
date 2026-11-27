@@ -100,6 +100,8 @@ def test_is_agent_generated():
 
 
 def test_missing_key_is_reported_not_raised(monkeypatch):
+    monkeypatch.delenv("LINEAR_CLIENT_ID", raising=False)
+    monkeypatch.delenv("LINEAR_CLIENT_SECRET", raising=False)
     monkeypatch.delenv("LINEAR_API_KEY", raising=False)
     monkeypatch.delenv("COS_LINEAR_API_KEY", raising=False)
     out = linear.read_context("web")
