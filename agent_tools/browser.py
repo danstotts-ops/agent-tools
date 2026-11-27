@@ -104,6 +104,14 @@ ALLOWED_SCHEMES = frozenset({"http", "https"})
 # treats a backslash as a path separator), so "http://127.0.0.1\\@evil.test"
 # would read as public here and private in the browser. Refuse them outright.
 _AMBIGUOUS_URL_CHARS = re.compile(r"[\x00-\x20\x7f\\]")
+# Host names must already be in the one form both parsers agree on: ASCII
+# letters, digits, dots, hyphens (punycode xn-- labels for IDNs). Chromium
+# applies UTS#46 mapping (fullwidth digits, lookalikes) that Python does not.
+_PLAIN_HOSTNAME = re.compile(r"^[A-Za-z0-9.-]+$")
+# Labels a browser reads as IPv4 parts (decimal, octal, 0x hex). A host made
+# only of these must be a canonical dotted quad; shorthand such as 127.1,
+# 0x7f.1, or 2130706433 is refused rather than trusted to the local resolver.
+_NUMERIC_LABEL = re.compile(r"^(0x[0-9a-f]*|[0-9]+)$", re.I)
 
 
 def _is_public_ip(address: str) -> bool:
@@ -117,8 +125,10 @@ def validate_url(url: str, *, allow_private_hosts: bool = False) -> None:
     """Refuse URLs a capture should never load.
 
     Always: anything but http/https (file:, data:, chrome:, view-source:,
-    about:), user:password@ credentials, and backslashes, whitespace, or
-    control characters that browsers and Python parse differently. Unless
+    about:), user:password@ credentials, backslashes, whitespace, or control
+    characters, non-ASCII or percent-encoded host names, and numeric hosts
+    that are not a canonical IP (127.1, 0x7f.1, 2130706433): all forms that
+    browsers and Python parse differently. Unless
     ``allow_private_hosts``: hosts that are, or resolve to, non-public
     addresses, and hosts that do not resolve (fail closed).
 
@@ -140,6 +150,20 @@ def validate_url(url: str, *, allow_private_hosts: bool = False) -> None:
     host = parsed.hostname
     if not host:
         raise UnsafeURLError(f"URL has no host: {url}", url=url, kind="UnsafeURLError")
+    if not _looks_like_ip(host):
+        if not _PLAIN_HOSTNAME.match(host):
+            raise UnsafeURLError(
+                f"refusing host {host!r}: use plain ASCII (punycode xn-- for IDNs)",
+                url=url,
+                kind="UnsafeURLError",
+            )
+        labels = [label for label in host.rstrip(".").split(".")]
+        if labels and all(_NUMERIC_LABEL.match(label) for label in labels):
+            raise UnsafeURLError(
+                f"refusing non-canonical numeric host {host!r}; use a dotted-quad IPv4",
+                url=url,
+                kind="UnsafeURLError",
+            )
     if allow_private_hosts:
         return
     try:

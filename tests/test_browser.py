@@ -204,10 +204,13 @@ def test_validate_url_checks_what_a_name_resolves_to(monkeypatch):
 
 def test_validate_url_allows_public_hosts(monkeypatch):
     validate_url("https://8.8.8.8/")
+    validate_url("https://[2606:4700::6810:1]/")
     monkeypatch.setattr(
         browser.socket, "getaddrinfo", lambda *a, **k: [(None, None, None, "", ("104.18.0.1", 0))]
     )
     validate_url("https://www.runpod.io/pricing")
+    validate_url("https://xn--bcher-kva.example/")  # punycode IDN is fine
+    validate_url("https://123.example/")  # numeric label alongside a name is fine
 
 
 def test_unresolvable_host_fails_closed(monkeypatch):
@@ -230,6 +233,15 @@ def test_unresolvable_host_fails_closed(monkeypatch):
         "http://www.runpod.io /",
         "http://www.runpod.io/\tpath",
         "http://www.runpod.io/\x00",
+        "http://\uff11\uff12\uff17.\uff10.\uff10.\uff11/",  # fullwidth 127.0.0.1
+        "http://runpod.io\u2024evil.test/",  # one-dot-leader lookalike
+        "http://xn--rnpod-0ra.io\u00e9/",
+        "http://127.0.0.%31/",
+        "http://127.1/",
+        "http://0x7f.1/",
+        "http://0x7f000001/",
+        "http://2130706433/",
+        "http://0177.0.0.1/",
     ],
 )
 def test_validate_url_rejects_parser_differentials(url, monkeypatch):
